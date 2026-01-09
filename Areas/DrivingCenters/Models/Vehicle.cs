@@ -1,4 +1,4 @@
-namespace DriveHub.Areas.Admin.Models;
+namespace DriveHub.Areas.DrivingCenters.Models;
 
 public class Vehicle
 {

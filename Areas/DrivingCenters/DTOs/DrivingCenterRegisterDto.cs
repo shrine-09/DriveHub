@@ -1,4 +1,4 @@
-namespace DriveHub.Areas.Admin.DTOs;
+namespace DriveHub.Areas.DrivingCenters.DTOs;
 
 public class DrivingCenterRegisterDto
 {

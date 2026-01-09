@@ -1,12 +1,12 @@
-using DriveHub.Areas.Admin.DTOs;
-using DriveHub.Areas.Admin.Models;
+using DriveHub.Areas.DrivingCenters.DTOs;
+using DriveHub.Areas.DrivingCenters.Models;
 using DriveHub.Data;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DriveHub.Areas.Admin.Controllers;
+namespace DriveHub.Areas.DrivingCenters.Controllers;
 
 [ApiController]
-[Route("api/admin/[controller]")]
+[Route("api/drivingcenters/[controller]")]
 public class DrivingCenterController : ControllerBase
 {
     public readonly ApplicationDbContext _context;
