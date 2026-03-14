@@ -1,5 +1,5 @@
 using DriveHub.Areas.DrivingCenters.DTOs;
-using DriveHub.Areas.DrivingCenters.Models;
+using DriveHub.Models;
 using DriveHub.Data;
 using Microsoft.AspNetCore.Mvc;
 

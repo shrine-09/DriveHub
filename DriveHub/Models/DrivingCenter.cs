@@ -1,6 +1,6 @@
-using DriveHub.Areas.Users.Models;
+using DriveHub.Models;
 
-namespace DriveHub.Areas.DrivingCenters.Models;
+namespace DriveHub.Models;
 
 public class DrivingCenter
 {

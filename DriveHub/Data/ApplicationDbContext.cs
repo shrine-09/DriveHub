@@ -1,5 +1,4 @@
-using DriveHub.Areas.DrivingCenters.Models;
-using DriveHub.Areas.Users.Models;
+using DriveHub.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DriveHub.Data;

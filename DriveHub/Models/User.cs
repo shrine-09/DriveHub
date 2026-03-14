@@ -1,4 +1,4 @@
-namespace DriveHub.Areas.Users.Models;
+namespace DriveHub.Models;
 
 public class User
 {
