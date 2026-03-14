@@ -47,3 +47,28 @@ export const registerCenter = async (
 
     return response.data;
 };
+
+export const changePassword = async (
+    currentPassword: string,
+    newPassword: string,
+    confirmNewPassword: string
+) => {
+    const token = localStorage.getItem("token");
+
+    const response = await axios.post(
+        `${API_BASE_USER}/change-password`,
+        {
+            currentPassword,
+            newPassword,
+            confirmNewPassword,
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    return response.data;
+};
+

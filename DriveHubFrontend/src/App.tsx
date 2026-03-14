@@ -1,10 +1,14 @@
 // import {ModeToggle} from "@/components/mode-toggle.tsx";
 import LandingPage from "@/pages/landingPage.tsx";
 import {BrowserRouter, Route, Routes} from "react-router-dom";
-import LoginPage from "@/pages/auth/loginForm.tsx";
-import RegisterPage from "@/pages/auth/registerForm.tsx";
-import CentersRegisterPage from "@/pages/auth/centersRegisterForm.tsx";
-import AdminDashboard from "@/pages/admin/adminDashboard.tsx";
+import LoginPage from "@/pages/auth/LoginForm.tsx";
+import RegisterPage from "@/pages/auth/RegisterForm.tsx";
+import CentersRegisterPage from "@/pages/auth/CentersRegisterForm.tsx";
+import AdminDashboard from "@/pages/admin/AdminDashboard.tsx";
+import ProtectedRoute from "@/routes/ProtectedRoute";
+import UserDashboard from "@/pages/user/UserDashboard.tsx";
+import DrivingCenterDashboard from "@/pages/drivingCenter/DrivingCenterDashboard.tsx";
+import ChangePasswordForm from "@/pages/auth/ChangePasswordForm.tsx";
 
 
 function App() {
@@ -15,7 +19,39 @@ function App() {
                 <Route path={"/login"} element={<LoginPage />} />
                 <Route path={"/register"} element={<RegisterPage />} />
                 <Route path={"/centersRegister"} element={<CentersRegisterPage />} />
-                <Route path={"/admin/dashboard"} element={<AdminDashboard />} />
+                <Route
+                    path={"/admin/dashboard"}
+                    element={
+                        <ProtectedRoute allowedRoles={["Admin"]}>
+                            <AdminDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={"/user/dashboard"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/driving-center/dashboard"}
+                    element={
+                        <ProtectedRoute allowedRoles={["DrivingCenter"]}>
+                            <DrivingCenterDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={"/change-password"}
+                    element={
+                        <ProtectedRoute>
+                            <ChangePasswordForm />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </BrowserRouter>
     )
