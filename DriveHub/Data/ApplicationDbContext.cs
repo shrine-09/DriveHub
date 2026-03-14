@@ -9,6 +9,7 @@ public class ApplicationDbContext : DbContext
     
     public DbSet<User> Users { get; set; }
     public DbSet<DrivingCenter> DrivingCenters { get; set; }
+    public DbSet<DrivingCenterApplications> DrivingCenterApplications { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
     
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IConfiguration config)
