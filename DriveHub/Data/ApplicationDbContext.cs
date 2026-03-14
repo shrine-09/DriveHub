@@ -5,35 +5,39 @@ namespace DriveHub.Data;
 
 public class ApplicationDbContext : DbContext
 {
-    private readonly IConfiguration _config;
-    
-    public DbSet<User> Users { get; set; }
-    public DbSet<DrivingCenter> DrivingCenters { get; set; }
-    public DbSet<DrivingCenterApplications> DrivingCenterApplications { get; set; }
-    public DbSet<Vehicle> Vehicles { get; set; }
-    
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IConfiguration config)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
-        _config = config;
     }
-    
+
+    public DbSet<User> Users { get; set; }
+    public DbSet<DrivingCenter> DrivingCenters { get; set; }
+    public DbSet<DrivingCenterApplication> DrivingCenterApplications { get; set; }
+    public DbSet<Vehicle> Vehicles { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        var email = _config["AdminUser:Email"];
-        var password = _config["AdminUser:Password"];
+        modelBuilder.Entity<DrivingCenter>()
+            .HasOne(dc => dc.User)
+            .WithOne(u => u.DrivingCenter)
+            .HasForeignKey<DrivingCenter>(dc => dc.UserId);
 
-        var adminUser = new User
-        {
-            UserId = 1,
-            UserName = "admin",
-            UserEmail = email,
-            UserRole = "Admin",
-            UserPasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
-        };
+        modelBuilder.Entity<DrivingCenter>()
+            .HasIndex(dc => dc.UserId)
+            .IsUnique();
 
-        modelBuilder.Entity<User>().HasData(adminUser);
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.UserEmail)
+            .IsUnique();
+
+        modelBuilder.Entity<DrivingCenter>()
+            .HasIndex(dc => dc.CompanyEmail)
+            .IsUnique(false);
+
+        modelBuilder.Entity<DrivingCenterApplication>()
+            .HasIndex(a => a.CompanyEmail)
+            .IsUnique(false);
     }
 }

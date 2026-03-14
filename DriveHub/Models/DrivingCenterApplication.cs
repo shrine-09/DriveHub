@@ -1,6 +1,6 @@
 namespace DriveHub.Models;
 
-public class DrivingCenterApplications
+public class DrivingCenterApplication
 {
     public int Id { get; set; }
 

@@ -33,7 +33,7 @@ public class DrivingCenterApplicationController : ControllerBase
         if (existingApprovedCenter)
             return BadRequest("This driving center is already registered.");
 
-        var application = new DrivingCenterApplications
+        var application = new DrivingCenterApplication
         {
             CompanyName = dto.CompanyName,
             RegistrationNumber = dto.RegistrationNumber,

@@ -7,6 +7,7 @@ using DriveHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DriveHub.Areas.Users.Controllers;
 
@@ -94,5 +95,35 @@ public class UserController : ControllerBase
             email = user.UserEmail,
             role = user.UserRole
         });
+    }
+    
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        if (dto.NewPassword != dto.ConfirmNewPassword)
+            return BadRequest(new { message = "New passwords do not match." });
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+
+        if (user == null)
+            return NotFound(new { message = "User not found." });
+
+        if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.UserPasswordHash))
+            return BadRequest(new { message = "Current password is incorrect." });
+
+        if (BCrypt.Net.BCrypt.Verify(dto.NewPassword, user.UserPasswordHash))
+            return BadRequest(new { message = "New password must be different from current password." });
+
+        user.UserPasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Password changed successfully." });
     }
 }
