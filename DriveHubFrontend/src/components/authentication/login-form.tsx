@@ -44,15 +44,21 @@ export function LoginForm({
     const handleLogin = async (data: LoginSchemaType) => {
         try {
             const response = await loginUser(data.userEmail, data.userPassword);
-            const { token, role, name, email } = response;
+            const { token, role, name, email, mustChangePassword } = response;
 
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
             localStorage.setItem("name", name);
             localStorage.setItem("email", email);
+            localStorage.setItem("mustChangePassword", String(mustChangePassword));
+
+            if (mustChangePassword) {
+                navigate("/change-password");
+                return;
+            }
 
             const normalizedRole = role.toLowerCase();
-
+            
             if (normalizedRole === "admin") {
                 navigate("/admin/dashboard");
             } else if (normalizedRole === "drivingcenter") {

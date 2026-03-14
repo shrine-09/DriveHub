@@ -65,6 +65,8 @@ export default function ChangePasswordForm({
             alert(response.message || "Password changed successfully.");
             form.reset();
 
+            localStorage.removeItem("mustChangePassword");
+
             const role = localStorage.getItem("role");
 
             if (role === "Admin") {

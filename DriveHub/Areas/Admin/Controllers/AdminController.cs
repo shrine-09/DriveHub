@@ -121,6 +121,7 @@ public class AdminController : ControllerBase
             UserName = application.CompanyName,
             UserEmail = application.CompanyEmail.Trim().ToLower(),
             UserPasswordHash = BCrypt.Net.BCrypt.HashPassword(temporaryPassword),
+            MustChangePassword = true,
             UserRole = "DrivingCenter"
         };
 
@@ -133,6 +134,7 @@ public class AdminController : ControllerBase
             CompanyContact = application.CompanyContact,
             CompanyType = application.CompanyType,
             IsVerified = true
+            
         };
 
         application.Status = "Approved";

@@ -3,6 +3,7 @@ using System;
 using DriveHub.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DriveHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260314184806_AddMustChangePasswordToUser")]
+    partial class AddMustChangePasswordToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,40 +117,6 @@ namespace DriveHub.Migrations
                     b.ToTable("DrivingCenterApplications");
                 });
 
-            modelBuilder.Entity("DriveHub.Models.PasswordResetToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TokenHash")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PasswordResetTokens");
-                });
-
             modelBuilder.Entity("DriveHub.Models.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -216,17 +185,6 @@ namespace DriveHub.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DriveHub.Models.PasswordResetToken", b =>
-                {
-                    b.HasOne("DriveHub.Models.User", "User")
-                        .WithMany("PasswordResetTokens")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("DriveHub.Models.Vehicle", b =>
                 {
                     b.HasOne("DriveHub.Models.DrivingCenter", "DrivingCenter")
@@ -246,8 +204,6 @@ namespace DriveHub.Migrations
             modelBuilder.Entity("DriveHub.Models.User", b =>
                 {
                     b.Navigation("DrivingCenter");
-
-                    b.Navigation("PasswordResetTokens");
                 });
 #pragma warning restore 612, 618
         }

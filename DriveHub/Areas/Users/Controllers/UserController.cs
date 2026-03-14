@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Cryptography;
 
 namespace DriveHub.Areas.Users.Controllers;
 
@@ -24,6 +25,21 @@ public class UserController : ControllerBase
         _config = config;
     }
 
+    private static string GenerateSecureToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        return Convert.ToBase64String(bytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .Replace("=", "");
+    }
+
+    private static string HashToken(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes);
+    }
+    
     private string GenerateJwtToken(User user)
     {
         var claims = new[]
@@ -93,7 +109,8 @@ public class UserController : ControllerBase
             token,
             name = user.UserName,
             email = user.UserEmail,
-            role = user.UserRole
+            role = user.UserRole,
+            mustChangePassword = user.MustChangePassword
         });
     }
     
@@ -121,9 +138,73 @@ public class UserController : ControllerBase
             return BadRequest(new { message = "New password must be different from current password." });
 
         user.UserPasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        user.MustChangePassword = false;
 
         await _db.SaveChangesAsync();
 
         return Ok(new { message = "Password changed successfully." });
+    }
+    
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+    {
+        var email = dto.UserEmail.Trim().ToLower();
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.UserEmail.ToLower() == email);
+
+        if (user != null)
+        {
+            var rawToken = GenerateSecureToken();
+            var tokenHash = HashToken(rawToken);
+
+            var resetToken = new PasswordResetToken
+            {
+                UserId = user.UserId,
+                TokenHash = tokenHash,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                IsUsed = false
+            };
+
+            _db.PasswordResetTokens.Add(resetToken);
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "If an account with that email exists, a password reset link has been generated.",
+                resetToken = rawToken
+            });
+        }
+
+        return Ok(new
+        {
+            message = "If an account with that email exists, a password reset link has been generated."
+        });
+    }
+    
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+    {
+        if (dto.NewPassword != dto.ConfirmNewPassword)
+            return BadRequest(new { message = "Passwords do not match." });
+
+        var tokenHash = HashToken(dto.Token);
+
+        var resetToken = await _db.PasswordResetTokens
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t =>
+                t.TokenHash == tokenHash &&
+                !t.IsUsed &&
+                t.ExpiresAt > DateTime.UtcNow);
+
+        if (resetToken == null)
+            return BadRequest(new { message = "Invalid or expired reset token." });
+
+        resetToken.User.UserPasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        resetToken.User.MustChangePassword = false;
+        resetToken.IsUsed = true;
+
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Password reset successfully." });
     }
 }

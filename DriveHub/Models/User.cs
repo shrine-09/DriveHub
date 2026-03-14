@@ -8,5 +8,8 @@ public class User
     public string UserPasswordHash { get; set; } = string.Empty;
     public string UserRole { get; set; } = "User";
 
+    public bool MustChangePassword { get; set; } = false;
+    
+    public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
     public DrivingCenter? DrivingCenter { get; set; }
 }
