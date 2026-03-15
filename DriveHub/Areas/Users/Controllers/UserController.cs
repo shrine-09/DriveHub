@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography;
+using DriveHub.Services;
 
 namespace DriveHub.Areas.Users.Controllers;
 
@@ -18,11 +19,13 @@ public class UserController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
-
-    public UserController(ApplicationDbContext db, IConfiguration config)
+    private readonly IEmailService _emailService;
+    
+    public UserController(ApplicationDbContext db, IConfiguration config, IEmailService emailService)
     {
         _db = db;
         _config = config;
+        _emailService = emailService;
     }
 
     private static string GenerateSecureToken()
@@ -168,16 +171,27 @@ public class UserController : ControllerBase
             _db.PasswordResetTokens.Add(resetToken);
             await _db.SaveChangesAsync();
 
-            return Ok(new
-            {
-                message = "If an account with that email exists, a password reset link has been generated.",
-                resetToken = rawToken
-            });
+            var resetLink = $"http://localhost:5173/reset-password?token={Uri.EscapeDataString(rawToken)}";
+
+            var emailBody = $@"
+            <h2>DriveHub Password Reset</h2>
+            <p>You requested a password reset for your account.</p>
+            <p>Click the link below to reset your password:</p>
+            <p><a href='{resetLink}'>Reset Password</a></p>
+            <p>This link will expire in 15 minutes.</p>
+            <p>If you did not request this, you can ignore this email.</p>
+        ";
+
+            await _emailService.SendEmailAsync(
+                user.UserEmail,
+                "DriveHub Password Reset",
+                emailBody
+            );
         }
 
         return Ok(new
         {
-            message = "If an account with that email exists, a password reset link has been generated."
+            message = "If an account with that email exists, a password reset link has been sent."
         });
     }
     
