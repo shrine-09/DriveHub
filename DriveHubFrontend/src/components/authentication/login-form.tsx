@@ -44,13 +44,14 @@ export function LoginForm({
     const handleLogin = async (data: LoginSchemaType) => {
         try {
             const response = await loginUser(data.userEmail, data.userPassword);
-            const { token, role, name, email, mustChangePassword } = response;
+            const { token, refreshToken, role, name, email, mustChangePassword } = response;
 
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
             localStorage.setItem("name", name);
             localStorage.setItem("email", email);
             localStorage.setItem("mustChangePassword", String(mustChangePassword));
+            localStorage.setItem("refreshToken", refreshToken);
 
             if (mustChangePassword) {
                 navigate("/change-password");

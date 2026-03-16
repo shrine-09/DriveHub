@@ -7,6 +7,8 @@ public class User
     public string UserEmail { get; set; } = string.Empty;
     public string UserPasswordHash { get; set; } = string.Empty;
     public string UserRole { get; set; } = "User";
+    
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     public bool MustChangePassword { get; set; } = false;
     

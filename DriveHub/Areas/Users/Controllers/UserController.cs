@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography;
 using DriveHub.Services;
+using System.Security.Cryptography;
 
 namespace DriveHub.Areas.Users.Controllers;
 
@@ -71,6 +72,22 @@ public class UserController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+    
+    private static string GenerateSecureRefreshToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(bytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .Replace("=", "");
+    }
+
+    private static string HashTokenValue(string token)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
+        return Convert.ToHexString(bytes);
+    }
+    
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
@@ -105,11 +122,23 @@ public class UserController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.UserPassword, user.UserPasswordHash))
             return Unauthorized(new { message = "Invalid credentials." });
 
-        var token = GenerateJwtToken(user);
+        var accessToken = GenerateJwtToken(user);
+
+        var rawRefreshToken = GenerateSecureRefreshToken();
+        var refreshToken = new RefreshToken
+        {
+            UserId = user.UserId,
+            TokenHash = HashTokenValue(rawRefreshToken),
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        };
+
+        _db.RefreshTokens.Add(refreshToken);
+        await _db.SaveChangesAsync();
 
         return Ok(new
         {
-            token,
+            token = accessToken,
+            refreshToken = rawRefreshToken,
             name = user.UserName,
             email = user.UserEmail,
             role = user.UserRole,
@@ -220,5 +249,65 @@ public class UserController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(new { message = "Password reset successfully." });
+    }
+    
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
+    {
+        var tokenHash = HashTokenValue(dto.RefreshToken);
+
+        var existingToken = await _db.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt =>
+                rt.TokenHash == tokenHash &&
+                rt.RevokedAt == null &&
+                rt.ExpiresAt > DateTime.UtcNow);
+
+        if (existingToken == null)
+            return Unauthorized(new { message = "Invalid or expired refresh token." });
+
+        existingToken.RevokedAt = DateTime.UtcNow;
+
+        var newAccessToken = GenerateJwtToken(existingToken.User);
+        var newRawRefreshToken = GenerateSecureRefreshToken();
+
+        var newRefreshToken = new RefreshToken
+        {
+            UserId = existingToken.UserId,
+            TokenHash = HashTokenValue(newRawRefreshToken),
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        };
+
+        _db.RefreshTokens.Add(newRefreshToken);
+        await _db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            token = newAccessToken,
+            refreshToken = newRawRefreshToken,
+            name = existingToken.User.UserName,
+            email = existingToken.User.UserEmail,
+            role = existingToken.User.UserRole,
+            mustChangePassword = existingToken.User.MustChangePassword
+        });
+    }
+    
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequestDto dto)
+    {
+        var tokenHash = HashTokenValue(dto.RefreshToken);
+
+        var existingToken = await _db.RefreshTokens
+            .FirstOrDefaultAsync(rt =>
+                rt.TokenHash == tokenHash &&
+                rt.RevokedAt == null);
+
+        if (existingToken != null)
+        {
+            existingToken.RevokedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+
+        return Ok(new { message = "Logged out successfully." });
     }
 }

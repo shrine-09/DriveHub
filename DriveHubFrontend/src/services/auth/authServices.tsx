@@ -72,3 +72,19 @@ export const changePassword = async (
     return response.data;
 };
 
+export const refreshAccessToken = async (refreshToken: string) => {
+    const response = await axios.post(`${API_BASE_USER}/refresh-token`, {
+        refreshToken,
+    });
+
+    return response.data;
+};
+
+export const logoutUser = async (refreshToken: string) => {
+    const response = await axios.post(`${API_BASE_USER}/logout`, {
+        refreshToken,
+    });
+
+    return response.data;
+};
+
