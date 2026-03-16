@@ -9,6 +9,8 @@ import ProtectedRoute from "@/routes/ProtectedRoute";
 import UserDashboard from "@/pages/user/UserDashboard.tsx";
 import DrivingCenterDashboard from "@/pages/drivingCenter/DrivingCenterDashboard.tsx";
 import ChangePasswordForm from "@/pages/auth/ChangePasswordForm.tsx";
+import ForgotPasswordForm from "@/pages/auth/ForgotPasswordForm.tsx";
+import ResetPasswordForm from "@/pages/auth/ResetPasswordForm.tsx";
 
 
 function App() {
@@ -52,6 +54,8 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route path={"/forgot-password"} element={<ForgotPasswordForm />} />
+                <Route path={"/reset-password"} element={<ResetPasswordForm />} />
             </Routes>
         </BrowserRouter>
     )

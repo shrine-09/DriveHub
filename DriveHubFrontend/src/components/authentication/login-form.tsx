@@ -156,6 +156,9 @@ export function LoginForm({
                     <Field>
                         <Button type="submit">Login</Button>
                     </Field>
+                    <FieldDescription className="text-center">
+                        <Link to="/forgot-password">Forgot password?</Link>
+                    </FieldDescription>
                 </FieldGroup>
             </form>
 

@@ -1,11 +1,12 @@
 import axios from "axios";
+import apiClient from "@/services/apiClient";
 
 const API_BASE_USER = "https://localhost:7234/api/users/User";
 const API_BASE_DRIVING_CENTER_APPLICATION =
     "https://localhost:7234/api/drivingcenter-applications";
 
 export const loginUser = async (email: string, password: string) => {
-    const response = await axios.post(`${API_BASE_USER}/login`, {
+    const response = await apiClient.post(`${API_BASE_USER}/login`, {
         userEmail: email,
         userPassword: password,
     });
@@ -18,7 +19,7 @@ export const registerUser = async (
     email: string,
     password: string
 ) => {
-    const response = await axios.post(`${API_BASE_USER}/register`, {
+    const response = await apiClient.post(`${API_BASE_USER}/register`, {
         userName: name,
         userEmail: email,
         userPassword: password,
@@ -34,7 +35,7 @@ export const registerCenter = async (
     registrationNo: string,
     companyType: string
 ) => {
-    const response = await axios.post(
+    const response = await apiClient.post(
         `${API_BASE_DRIVING_CENTER_APPLICATION}/submit`,
         {
             companyName: name,
@@ -55,7 +56,7 @@ export const changePassword = async (
 ) => {
     const token = localStorage.getItem("token");
 
-    const response = await axios.post(
+    const response = await apiClient.post(
         `${API_BASE_USER}/change-password`,
         {
             currentPassword,
@@ -88,3 +89,24 @@ export const logoutUser = async (refreshToken: string) => {
     return response.data;
 };
 
+export const forgotPassword = async (email: string) => {
+    const response = await apiClient.post(`${API_BASE_USER}/forgot-password`, {
+        userEmail: email,
+    });
+
+    return response.data;
+};
+
+export const resetPassword = async (
+    token: string,
+    newPassword: string,
+    confirmNewPassword: string
+) => {
+    const response = await apiClient.post(`${API_BASE_USER}/reset-password`, {
+        token,
+        newPassword,
+        confirmNewPassword,
+    });
+
+    return response.data;
+};
