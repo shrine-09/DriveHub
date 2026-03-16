@@ -1,20 +1,19 @@
-import { Eye, EyeOff, GalleryVerticalEnd } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     Field,
-    FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { resetPassword } from "@/services/auth/authServices.tsx";
+import AuthLayout from "@/components/authentication/AuthLayout";
 
 const resetPasswordSchema = z
     .object({
@@ -34,10 +33,7 @@ const resetPasswordSchema = z
 
 type ResetPasswordSchemaType = z.infer<typeof resetPasswordSchema>;
 
-export default function ResetPasswordForm({
-                                              className,
-                                              ...props
-                                          }: React.ComponentProps<"div">) {
+export default function ResetPasswordForm() {
     const [searchParams] = useSearchParams();
     const token = searchParams.get("token") || "";
     const navigate = useNavigate();
@@ -50,14 +46,23 @@ export default function ResetPasswordForm({
         },
     });
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
+
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
     const handleResetPassword = async (data: ResetPasswordSchemaType) => {
         if (!token) {
-            alert("Invalid or missing reset token.");
+            setStatusMessage("Invalid or missing reset token.");
+            setStatusType("error");
             return;
         }
+
+        setIsSubmitting(true);
+        setStatusMessage("");
+        setStatusType("");
 
         try {
             const response = await resetPassword(
@@ -66,103 +71,102 @@ export default function ResetPasswordForm({
                 data.confirmNewPassword
             );
 
-            alert(response.message || "Password reset successfully.");
-            navigate("/login");
+            setStatusMessage(response.message || "Password reset successfully.");
+            setStatusType("success");
+            form.reset();
+            setTimeout(() => {
+                navigate("/login");
+            }, 1500);
         } catch (error: any) {
             if (error.response?.data?.message) {
-                alert(error.response.data.message);
+                setStatusMessage(error.response.data.message);
             } else {
-                alert("Error connecting to backend.");
+                setStatusMessage("Error connecting to backend.");
             }
+            setStatusType("error");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-            <div className={cn("w-full max-w-sm", className)} {...props}>
-                <form onSubmit={form.handleSubmit(handleResetPassword)}>
-                    <FieldGroup>
-                        <div className="flex flex-col items-center gap-2 text-center">
-                            <Link
-                                to="/"
-                                className="flex flex-col items-center gap-2 font-medium"
-                            >
-                                <div className="flex size-8 items-center justify-center rounded-md">
-                                    <GalleryVerticalEnd className="size-6" />
+        <AuthLayout
+            title="Reset Password"
+            description="Enter your new password"
+        >
+            <form onSubmit={form.handleSubmit(handleResetPassword)}>
+                <FieldGroup>
+                    <Controller
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                                <FieldLabel>New Password</FieldLabel>
+                                <div className="relative">
+                                    <Input
+                                        {...field}
+                                        type={showNewPassword ? "text" : "password"}
+                                        placeholder="********"
+                                    />
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
+                                        onClick={() => setShowNewPassword((prev) => !prev)}
+                                    >
+                                        {showNewPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                                    </Button>
                                 </div>
-                                <span className="sr-only">DriveHub</span>
-                            </Link>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
 
-                            <h1 className="text-xl font-bold">Reset Password</h1>
-                            <FieldDescription>
-                                Enter your new password
-                            </FieldDescription>
+                    <Controller
+                        control={form.control}
+                        name="confirmNewPassword"
+                        render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                                <FieldLabel>Confirm New Password</FieldLabel>
+                                <div className="relative">
+                                    <Input
+                                        {...field}
+                                        type={showConfirmNewPassword ? "text" : "password"}
+                                        placeholder="********"
+                                    />
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
+                                        onClick={() => setShowConfirmNewPassword((prev) => !prev)}
+                                    >
+                                        {showConfirmNewPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                                    </Button>
+                                </div>
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
+
+                    {statusMessage && (
+                        <div
+                            className={`rounded-md border px-3 py-2 text-sm ${
+                                statusType === "success"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                            }`}
+                        >
+                            {statusMessage}
                         </div>
+                    )}
 
-                        <Controller
-                            control={form.control}
-                            name="newPassword"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>New Password</FieldLabel>
-                                    <div className="relative">
-                                        <Input
-                                            {...field}
-                                            type={showNewPassword ? "text" : "password"}
-                                            placeholder="********"
-                                        />
-                                        <Button
-                                            type="button"
-                                            size="icon"
-                                            variant="ghost"
-                                            className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
-                                            onClick={() => setShowNewPassword((prev) => !prev)}
-                                        >
-                                            {showNewPassword ? <Eye size={16} /> : <EyeOff size={16} />}
-                                        </Button>
-                                    </div>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-
-                        <Controller
-                            control={form.control}
-                            name="confirmNewPassword"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Confirm New Password</FieldLabel>
-                                    <div className="relative">
-                                        <Input
-                                            {...field}
-                                            type={showConfirmNewPassword ? "text" : "password"}
-                                            placeholder="********"
-                                        />
-                                        <Button
-                                            type="button"
-                                            size="icon"
-                                            variant="ghost"
-                                            className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
-                                            onClick={() => setShowConfirmNewPassword((prev) => !prev)}
-                                        >
-                                            {showConfirmNewPassword ? (
-                                                <Eye size={16} />
-                                            ) : (
-                                                <EyeOff size={16} />
-                                            )}
-                                        </Button>
-                                    </div>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-
-                        <Field>
-                            <Button type="submit">Reset Password</Button>
-                        </Field>
-                    </FieldGroup>
-                </form>
-            </div>
-        </div>
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Resetting..." : "Reset Password"}
+                    </Button>
+                </FieldGroup>
+            </form>
+        </AuthLayout>
     );
 }

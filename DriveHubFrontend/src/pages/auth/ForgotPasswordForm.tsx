@@ -1,19 +1,17 @@
-import { GalleryVerticalEnd } from "lucide-react";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     Field,
-    FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPassword } from "@/services/auth/authServices.tsx";
+import AuthLayout from "@/components/authentication/AuthLayout";
+import { useState } from "react";
 
 const forgotPasswordSchema = z.object({
     userEmail: z.string().email("Enter a valid email address"),
@@ -21,10 +19,7 @@ const forgotPasswordSchema = z.object({
 
 type ForgotPasswordSchemaType = z.infer<typeof forgotPasswordSchema>;
 
-export default function ForgotPasswordForm({
-                                               className,
-                                               ...props
-                                           }: React.ComponentProps<"div">) {
+export default function ForgotPasswordForm() {
     const form = useForm<ForgotPasswordSchemaType>({
         resolver: zodResolver(forgotPasswordSchema),
         defaultValues: {
@@ -32,60 +27,72 @@ export default function ForgotPasswordForm({
         },
     });
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
+
     const handleForgotPassword = async (data: ForgotPasswordSchemaType) => {
+        setIsSubmitting(true);
+        setStatusMessage("");
+        setStatusType("");
+
         try {
             const response = await forgotPassword(data.userEmail);
-            alert(response.message || "Password reset link sent.");
+            setStatusMessage(
+                response.message || "If an account with that email exists, a reset link has been sent."
+            );
+            setStatusType("success");
             form.reset();
         } catch (error: any) {
             if (error.response?.data?.message) {
-                alert(error.response.data.message);
+                setStatusMessage(error.response.data.message);
             } else {
-                alert("Error connecting to backend.");
+                setStatusMessage("Error connecting to backend.");
             }
+            setStatusType("error");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-            <div className={cn("w-full max-w-sm", className)} {...props}>
-                <form onSubmit={form.handleSubmit(handleForgotPassword)}>
-                    <FieldGroup>
-                        <div className="flex flex-col items-center gap-2 text-center">
-                            <Link
-                                to="/"
-                                className="flex flex-col items-center gap-2 font-medium"
-                            >
-                                <div className="flex size-8 items-center justify-center rounded-md">
-                                    <GalleryVerticalEnd className="size-6" />
-                                </div>
-                                <span className="sr-only">DriveHub</span>
-                            </Link>
+        <AuthLayout
+            title="Forgot Password"
+            description="Enter your email to receive a password reset link"
+        >
+            <form onSubmit={form.handleSubmit(handleForgotPassword)}>
+                <FieldGroup>
+                    <Controller
+                        control={form.control}
+                        name="userEmail"
+                        render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                                <FieldLabel>Email</FieldLabel>
+                                <Input {...field} type="email" placeholder="email@example.com" />
+                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                            </Field>
+                        )}
+                    />
 
-                            <h1 className="text-xl font-bold">Forgot Password</h1>
-                            <FieldDescription>
-                                Enter your email to receive a password reset link
-                            </FieldDescription>
+                    {statusMessage && (
+                        <div
+                            className={`rounded-md border px-3 py-2 text-sm ${
+                                statusType === "success"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                            }`}
+                        >
+                            {statusMessage}
                         </div>
-
-                        <Controller
-                            control={form.control}
-                            name="userEmail"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Email</FieldLabel>
-                                    <Input {...field} type="email" placeholder="email@example.com" />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-
-                        <Field>
-                            <Button type="submit">Send Reset Link</Button>
-                        </Field>
-                    </FieldGroup>
-                </form>
-            </div>
-        </div>
+                    )}
+                    
+                    <Field>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Sending..." : "Send Reset Link"}
+                        </Button>
+                    </Field>
+                </FieldGroup>
+            </form>
+        </AuthLayout>
     );
 }

@@ -19,13 +19,13 @@ export default function LandingPage() {
             </div>
 
             {/* Navbar */}
-            <header className="absolute top-0 left-0 w-full flex items-center justify-between p-6 pointer-events-auto">
+            <header className="absolute top-0 left-0 w-full flex items-center justify-between p-6 cursor-pointer pointer-events-auto">
                 <div className="text-xl font-semibold text-white drop-shadow">DriveHub</div>
                 
                 <div className="flex gap-2">
                     <Button
                         onClick={() => navigate("/login")}
-                        className="px-5 py-2 bg-transparent text-white text-sm rounded-md font-semibold hover:bg-black/[0.8] hover:shadow-lg"
+                        className="px-5 py-2 bg-transparent text-white text-sm rounded-md font-semibold hover:bg-black/[0.8] cursor-pointer hover:shadow-lg"
                     >
                         Log in
                     </Button>
@@ -34,7 +34,7 @@ export default function LandingPage() {
                         containerClassName="rounded-full"
                         as="button"
                         onClick={() => navigate("/register")}
-                        className="dark:bg-black bg-white text-black text-sm font-semibold dark:text-white flex items-center space-x-2"
+                        className="dark:bg-black bg-white text-black text-sm font-semibold dark:text-white flex items-center cursor-pointer space-x-2"
                     >
                         Join Us
                     </HoverBorderGradient>
