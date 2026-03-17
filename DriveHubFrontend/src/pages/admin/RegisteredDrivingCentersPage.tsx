@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -8,6 +8,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRegisteredDrivingCenters } from "@/services/admin/adminServices";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type RegisteredDrivingCenter = {
     id: number;
@@ -20,11 +21,14 @@ type RegisteredDrivingCenter = {
     userId: number;
 };
 
+const PAGE_SIZE = 5;
+
 export default function RegisteredDrivingCentersPage() {
     const [centers, setCenters] = useState<RegisteredDrivingCenter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [statusMessage, setStatusMessage] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         const loadCenters = async () => {
@@ -42,16 +46,35 @@ export default function RegisteredDrivingCentersPage() {
 
         loadCenters();
     }, []);
-    
-    const filteredCenters = centers.filter((center) => {
-        const search = searchTerm.toLowerCase();
 
-        return (
-            center.companyName.toLowerCase().includes(search) ||
-            center.registrationNumber.toLowerCase().includes(search)
-        );
-    });
-    
+    const filteredCenters = useMemo(() => {
+        const search = searchTerm.toLowerCase().trim();
+
+        return centers.filter((center) => {
+            return (
+                center.companyName.toLowerCase().includes(search) ||
+                center.registrationNumber.toLowerCase().includes(search)
+            );
+        });
+    }, [centers, searchTerm]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredCenters.length / PAGE_SIZE));
+
+    const paginatedCenters = useMemo(() => {
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        return filteredCenters.slice(startIndex, startIndex + PAGE_SIZE);
+    }, [filteredCenters, currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
     return (
         <SidebarProvider
             style={
@@ -82,7 +105,7 @@ export default function RegisteredDrivingCentersPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        
+
                         {statusMessage && (
                             <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                                 {statusMessage}
@@ -102,52 +125,73 @@ export default function RegisteredDrivingCentersPage() {
                                 </CardContent>
                             </Card>
                         ) : (
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                {filteredCenters.map((center) => (
-                                    <Card
-                                        key={center.id}
-                                        className="transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                                    >
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">{center.companyName}</CardTitle>
-                                        </CardHeader>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Driving Centers</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="overflow-x-auto rounded-md border">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-muted/50">
+                                            <tr className="border-b">
+                                                <th className="px-4 py-3 text-left font-medium">ID</th>
+                                                <th className="px-4 py-3 text-left font-medium">Company Name</th>
+                                                <th className="px-4 py-3 text-left font-medium">Registration No.</th>
+                                                <th className="px-4 py-3 text-left font-medium">Email</th>
+                                                <th className="px-4 py-3 text-left font-medium">Contact</th>
+                                                <th className="px-4 py-3 text-left font-medium">Type</th>
+                                                <th className="px-4 py-3 text-left font-medium">Verified</th>
+                                                <th className="px-4 py-3 text-left font-medium">User ID</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {paginatedCenters.map((center) => (
+                                                <tr
+                                                    key={center.id}
+                                                    className="border-b transition-colors hover:bg-muted/40"
+                                                >
+                                                    <td className="px-4 py-3">{center.id}</td>
+                                                    <td className="px-4 py-3 font-medium">{center.companyName}</td>
+                                                    <td className="px-4 py-3">{center.registrationNumber}</td>
+                                                    <td className="px-4 py-3 break-all">{center.companyEmail}</td>
+                                                    <td className="px-4 py-3">{center.companyContact}</td>
+                                                    <td className="px-4 py-3 capitalize">{center.companyType}</td>
+                                                    <td className="px-4 py-3">
+                                                        {center.isVerified ? "Verified" : "Not Verified"}
+                                                    </td>
+                                                    <td className="px-4 py-3">{center.userId}</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                                        <CardContent className="space-y-3 text-sm">
-                                            <div>
-                                                <p className="text-muted-foreground">Registration Number</p>
-                                                <p className="font-medium">{center.registrationNumber}</p>
-                                            </div>
+                                    <div className="flex items-center justify-between gap-4">
+                                        <p className="text-sm text-muted-foreground">
+                                            Page {currentPage} of {totalPages}
+                                        </p>
 
-                                            <div>
-                                                <p className="text-muted-foreground">Email</p>
-                                                <p className="font-medium break-all">{center.companyEmail}</p>
-                                            </div>
-
-                                            <div>
-                                                <p className="text-muted-foreground">Contact</p>
-                                                <p className="font-medium">{center.companyContact}</p>
-                                            </div>
-
-                                            <div>
-                                                <p className="text-muted-foreground">Company Type</p>
-                                                <p className="font-medium capitalize">{center.companyType}</p>
-                                            </div>
-
-                                            <div>
-                                                <p className="text-muted-foreground">Verification Status</p>
-                                                <p className="font-medium">
-                                                    {center.isVerified ? "Verified" : "Not Verified"}
-                                                </p>
-                                            </div>
-
-                                            <div>
-                                                <p className="text-muted-foreground">Linked User ID</p>
-                                                <p className="font-medium">{center.userId}</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                            >
+                                                Previous
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() =>
+                                                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                                                }
+                                                disabled={currentPage === totalPages}
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         )}
                     </div>
                 </div>

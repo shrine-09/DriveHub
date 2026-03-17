@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -8,6 +8,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getUsers } from "@/services/admin/adminServices";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type AdminUser = {
     userId: number;
@@ -16,11 +17,14 @@ type AdminUser = {
     userRole: string;
 };
 
+const PAGE_SIZE = 5;
+
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [statusMessage, setStatusMessage] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         const loadUsers = async () => {
@@ -39,11 +43,31 @@ export default function AdminUsersPage() {
         loadUsers();
     }, []);
 
-    const filteredUsers = users.filter((user) => {
-        const search = searchTerm.toLowerCase();
-        return user.userName.toLowerCase().includes(search);
-    });
-    
+    const filteredUsers = useMemo(() => {
+        const search = searchTerm.toLowerCase().trim();
+
+        return users.filter((user) =>
+            user.userName.toLowerCase().includes(search)
+        );
+    }, [users, searchTerm]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+
+    const paginatedUsers = useMemo(() => {
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        return filteredUsers.slice(startIndex, startIndex + PAGE_SIZE);
+    }, [filteredUsers, currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
     return (
         <SidebarProvider
             style={
@@ -72,7 +96,7 @@ export default function AdminUsersPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        
+
                         {statusMessage && (
                             <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                                 {statusMessage}
@@ -92,34 +116,63 @@ export default function AdminUsersPage() {
                                 </CardContent>
                             </Card>
                         ) : (
-                            <div className="grid gap-4">
-                                {filteredUsers.map((user) => (
-                                    <Card
-                                        key={user.userId}
-                                        className="transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                                    >
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">{user.userName}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2 text-sm">
-                                            <div>
-                                                <p className="text-muted-foreground">Email</p>
-                                                <p className="font-medium break-all">{user.userEmail}</p>
-                                            </div>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Users</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="overflow-x-auto rounded-md border">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-muted/50">
+                                            <tr className="border-b">
+                                                <th className="px-4 py-3 text-left font-medium">User ID</th>
+                                                <th className="px-4 py-3 text-left font-medium">Name</th>
+                                                <th className="px-4 py-3 text-left font-medium">Email</th>
+                                                <th className="px-4 py-3 text-left font-medium">Role</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {paginatedUsers.map((user) => (
+                                                <tr
+                                                    key={user.userId}
+                                                    className="border-b transition-colors hover:bg-muted/40"
+                                                >
+                                                    <td className="px-4 py-3">{user.userId}</td>
+                                                    <td className="px-4 py-3 font-medium">{user.userName}</td>
+                                                    <td className="px-4 py-3 break-all">{user.userEmail}</td>
+                                                    <td className="px-4 py-3">{user.userRole}</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                                            <div>
-                                                <p className="text-muted-foreground">Role</p>
-                                                <p className="font-medium">{user.userRole}</p>
-                                            </div>
+                                    <div className="flex items-center justify-between gap-4">
+                                        <p className="text-sm text-muted-foreground">
+                                            Page {currentPage} of {totalPages}
+                                        </p>
 
-                                            <div>
-                                                <p className="text-muted-foreground">User ID</p>
-                                                <p className="font-medium">{user.userId}</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                            >
+                                                Previous
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() =>
+                                                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                                                }
+                                                disabled={currentPage === totalPages}
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         )}
                     </div>
                 </div>

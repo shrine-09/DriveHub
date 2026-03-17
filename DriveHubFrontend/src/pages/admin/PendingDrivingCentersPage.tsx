@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import {
     SidebarInset,
     SidebarProvider,
 } from "@/components/ui/sidebar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
     approveDrivingCenterApplication,
@@ -13,6 +13,15 @@ import {
     rejectDrivingCenterApplication,
 } from "@/services/admin/adminServices";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 type PendingDrivingCenterApplication = {
     id: number;
@@ -25,6 +34,8 @@ type PendingDrivingCenterApplication = {
     submittedAt: string;
 };
 
+const PAGE_SIZE = 5;
+
 export default function PendingDrivingCentersPage() {
     const [applications, setApplications] = useState<PendingDrivingCenterApplication[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +43,11 @@ export default function PendingDrivingCentersPage() {
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
     const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [selectedRejectId, setSelectedRejectId] = useState<number | null>(null);
+    const [rejectRemarks, setRejectRemarks] = useState("");
 
     const fetchPendingApplications = async () => {
         setIsLoading(true);
@@ -76,20 +92,27 @@ export default function PendingDrivingCentersPage() {
         }
     };
 
-    const handleReject = async (id: number) => {
-        setActionId(id);
+    const handleReject = async () => {
+        if (selectedRejectId === null) return;
+
+        setActionId(selectedRejectId);
         setStatusMessage("");
         setStatusType("");
 
         try {
-            const response = await rejectDrivingCenterApplication(id);
+            const response = await rejectDrivingCenterApplication(
+                selectedRejectId,
+                rejectRemarks
+            );
 
             setStatusMessage(
                 response.message || "Application rejected successfully."
             );
             setStatusType("success");
 
-            setApplications((prev) => prev.filter((app) => app.id !== id));
+            setApplications((prev) =>
+                prev.filter((app) => app.id !== selectedRejectId)
+            );
         } catch (error: any) {
             setStatusMessage(
                 error.response?.data?.message || "Failed to reject application."
@@ -97,18 +120,40 @@ export default function PendingDrivingCentersPage() {
             setStatusType("error");
         } finally {
             setActionId(null);
+            setRejectDialogOpen(false);
+            setSelectedRejectId(null);
+            setRejectRemarks("");
         }
     };
 
-    const filteredApplications = applications.filter((application) => {
-        const search = searchTerm.toLowerCase();
+    const filteredApplications = useMemo(() => {
+        const search = searchTerm.toLowerCase().trim();
 
-        return (
-            application.companyName.toLowerCase().includes(search) ||
-            application.registrationNumber.toLowerCase().includes(search)
-        );
-    });
-    
+        return applications.filter((application) => {
+            return (
+                application.companyName.toLowerCase().includes(search) ||
+                application.registrationNumber.toLowerCase().includes(search)
+            );
+        });
+    }, [applications, searchTerm]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredApplications.length / PAGE_SIZE));
+
+    const paginatedApplications = useMemo(() => {
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        return filteredApplications.slice(startIndex, startIndex + PAGE_SIZE);
+    }, [filteredApplications, currentPage]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
     return (
         <SidebarProvider
             style={
@@ -139,7 +184,7 @@ export default function PendingDrivingCentersPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        
+
                         {statusMessage && (
                             <div
                                 className={`rounded-md border px-4 py-3 text-sm whitespace-pre-line ${
@@ -153,7 +198,11 @@ export default function PendingDrivingCentersPage() {
                         )}
 
                         {isLoading ? (
-                            <div className="text-sm text-muted-foreground">Loading applications...</div>
+                            <Card>
+                                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                                    Loading applications...
+                                </CardContent>
+                            </Card>
                         ) : filteredApplications.length === 0 ? (
                             <Card>
                                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
@@ -161,72 +210,139 @@ export default function PendingDrivingCentersPage() {
                                 </CardContent>
                             </Card>
                         ) : (
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                {filteredApplications.map((application) => (
-                                    <Card
-                                        key={application.id}
-                                        className="transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                                    >
-                                        <CardHeader className="space-y-3">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div>
-                                                    <CardTitle className="text-lg">
-                                                        {application.companyName}
-                                                    </CardTitle>
-                                                    <CardDescription className="mt-1">
-                                                        Submitted on{" "}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Pending Applications</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="overflow-x-auto rounded-md border">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-muted/50">
+                                            <tr className="border-b">
+                                                <th className="px-4 py-3 text-left font-medium">ID</th>
+                                                <th className="px-4 py-3 text-left font-medium">Company Name</th>
+                                                <th className="px-4 py-3 text-left font-medium">Registration No.</th>
+                                                <th className="px-4 py-3 text-left font-medium">Email</th>
+                                                <th className="px-4 py-3 text-left font-medium">Contact</th>
+                                                <th className="px-4 py-3 text-left font-medium">Type</th>
+                                                <th className="px-4 py-3 text-left font-medium">Submitted</th>
+                                                <th className="px-4 py-3 text-left font-medium">Actions</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {paginatedApplications.map((application) => (
+                                                <tr
+                                                    key={application.id}
+                                                    className="border-b transition-colors hover:bg-muted/40"
+                                                >
+                                                    <td className="px-4 py-3">{application.id}</td>
+                                                    <td className="px-4 py-3 font-medium">{application.companyName}</td>
+                                                    <td className="px-4 py-3">{application.registrationNumber}</td>
+                                                    <td className="px-4 py-3 break-all">{application.companyEmail}</td>
+                                                    <td className="px-4 py-3">{application.companyContact}</td>
+                                                    <td className="px-4 py-3 capitalize">{application.companyType}</td>
+                                                    <td className="px-4 py-3">
                                                         {new Date(application.submittedAt).toLocaleDateString()}
-                                                    </CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                disabled={actionId === application.id}
+                                                                onClick={() => handleApprove(application.id)}
+                                                            >
+                                                                {actionId === application.id ? "..." : "Approve"}
+                                                            </Button>
 
-                                        <CardContent className="space-y-3 text-sm">
-                                            <div>
-                                                <p className="text-muted-foreground">Registration Number</p>
-                                                <p className="font-medium">{application.registrationNumber}</p>
-                                            </div>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                disabled={actionId === application.id}
+                                                                onClick={() => {
+                                                                    setSelectedRejectId(application.id);
+                                                                    setRejectRemarks("");
+                                                                    setRejectDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                {actionId === application.id ? "..." : "Reject"}
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                                            <div>
-                                                <p className="text-muted-foreground">Email</p>
-                                                <p className="font-medium break-all">{application.companyEmail}</p>
-                                            </div>
+                                    <div className="flex items-center justify-between gap-4">
+                                        <p className="text-sm text-muted-foreground">
+                                            Page {currentPage} of {totalPages}
+                                        </p>
 
-                                            <div>
-                                                <p className="text-muted-foreground">Contact</p>
-                                                <p className="font-medium">{application.companyContact}</p>
-                                            </div>
-
-                                            <div>
-                                                <p className="text-muted-foreground">Company Type</p>
-                                                <p className="font-medium capitalize">{application.companyType}</p>
-                                            </div>
-
-                                            <div className="flex gap-3 pt-2">
-                                                <Button
-                                                    className="flex-1"
-                                                    disabled={actionId === application.id}
-                                                    onClick={() => handleApprove(application.id)}
-                                                >
-                                                    {actionId === application.id ? "Processing..." : "Approve"}
-                                                </Button>
-
-                                                <Button
-                                                    variant="destructive"
-                                                    className="flex-1"
-                                                    disabled={actionId === application.id}
-                                                    onClick={() => handleReject(application.id)}
-                                                >
-                                                    {actionId === application.id ? "Processing..." : "Reject"}
-                                                </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                            >
+                                                Previous
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() =>
+                                                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                                                }
+                                                disabled={currentPage === totalPages}
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         )}
                     </div>
                 </div>
+
+                <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Reject Application</DialogTitle>
+                            <DialogDescription>
+                                Add optional remarks to include in the rejection email.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Admin Remarks</label>
+                            <Textarea
+                                placeholder="Enter reason for rejection..."
+                                value={rejectRemarks}
+                                onChange={(e) => setRejectRemarks(e.target.value)}
+                            />
+                        </div>
+
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setRejectDialogOpen(false);
+                                    setSelectedRejectId(null);
+                                    setRejectRemarks("");
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleReject}
+                                disabled={actionId === selectedRejectId}
+                            >
+                                {actionId === selectedRejectId ? "Rejecting..." : "Confirm Reject"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </SidebarInset>
         </SidebarProvider>
     );
