@@ -12,6 +12,7 @@ import {
     getPendingDrivingCenterApplications,
     rejectDrivingCenterApplication,
 } from "@/services/admin/adminServices";
+import { Input } from "@/components/ui/input";
 
 type PendingDrivingCenterApplication = {
     id: number;
@@ -30,6 +31,7 @@ export default function PendingDrivingCentersPage() {
     const [actionId, setActionId] = useState<number | null>(null);
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     const fetchPendingApplications = async () => {
         setIsLoading(true);
@@ -59,7 +61,7 @@ export default function PendingDrivingCentersPage() {
             const response = await approveDrivingCenterApplication(id);
 
             setStatusMessage(
-                `Application approved successfully.\nLogin Email: ${response.loginEmail}\nTemporary Password: ${response.temporaryPassword}`
+                response.message || "Application approved successfully."
             );
             setStatusType("success");
 
@@ -98,6 +100,15 @@ export default function PendingDrivingCentersPage() {
         }
     };
 
+    const filteredApplications = applications.filter((application) => {
+        const search = searchTerm.toLowerCase();
+
+        return (
+            application.companyName.toLowerCase().includes(search) ||
+            application.registrationNumber.toLowerCase().includes(search)
+        );
+    });
+    
     return (
         <SidebarProvider
             style={
@@ -121,6 +132,14 @@ export default function PendingDrivingCentersPage() {
                             </p>
                         </div>
 
+                        <div className="max-w-md">
+                            <Input
+                                placeholder="Search by company name or registration number..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        
                         {statusMessage && (
                             <div
                                 className={`rounded-md border px-4 py-3 text-sm whitespace-pre-line ${
@@ -135,7 +154,7 @@ export default function PendingDrivingCentersPage() {
 
                         {isLoading ? (
                             <div className="text-sm text-muted-foreground">Loading applications...</div>
-                        ) : applications.length === 0 ? (
+                        ) : filteredApplications.length === 0 ? (
                             <Card>
                                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
                                     No pending driving center applications right now.
@@ -143,7 +162,7 @@ export default function PendingDrivingCentersPage() {
                             </Card>
                         ) : (
                             <div className="grid gap-4 lg:grid-cols-2">
-                                {applications.map((application) => (
+                                {filteredApplications.map((application) => (
                                     <Card
                                         key={application.id}
                                         className="transition-all duration-300 hover:-translate-y-1 hover:shadow-md"

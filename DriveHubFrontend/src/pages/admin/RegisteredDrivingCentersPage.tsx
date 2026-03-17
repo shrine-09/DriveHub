@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRegisteredDrivingCenters } from "@/services/admin/adminServices";
+import { Input } from "@/components/ui/input";
 
 type RegisteredDrivingCenter = {
     id: number;
@@ -23,6 +24,7 @@ export default function RegisteredDrivingCentersPage() {
     const [centers, setCenters] = useState<RegisteredDrivingCenter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [statusMessage, setStatusMessage] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         const loadCenters = async () => {
@@ -40,7 +42,16 @@ export default function RegisteredDrivingCentersPage() {
 
         loadCenters();
     }, []);
+    
+    const filteredCenters = centers.filter((center) => {
+        const search = searchTerm.toLowerCase();
 
+        return (
+            center.companyName.toLowerCase().includes(search) ||
+            center.registrationNumber.toLowerCase().includes(search)
+        );
+    });
+    
     return (
         <SidebarProvider
             style={
@@ -64,6 +75,14 @@ export default function RegisteredDrivingCentersPage() {
                             </p>
                         </div>
 
+                        <div className="max-w-md">
+                            <Input
+                                placeholder="Search by company name or registration number..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        
                         {statusMessage && (
                             <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                                 {statusMessage}
@@ -76,7 +95,7 @@ export default function RegisteredDrivingCentersPage() {
                                     Loading registered driving centers...
                                 </CardContent>
                             </Card>
-                        ) : centers.length === 0 ? (
+                        ) : filteredCenters.length === 0 ? (
                             <Card>
                                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
                                     No registered driving centers found.
@@ -84,7 +103,7 @@ export default function RegisteredDrivingCentersPage() {
                             </Card>
                         ) : (
                             <div className="grid gap-4 lg:grid-cols-2">
-                                {centers.map((center) => (
+                                {filteredCenters.map((center) => (
                                     <Card
                                         key={center.id}
                                         className="transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
