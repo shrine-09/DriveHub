@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getUsers } from "@/services/admin/adminServices";
+import { Input } from "@/components/ui/input";
 
 type AdminUser = {
     userId: number;
@@ -19,6 +20,7 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [statusMessage, setStatusMessage] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         const loadUsers = async () => {
@@ -37,6 +39,11 @@ export default function AdminUsersPage() {
         loadUsers();
     }, []);
 
+    const filteredUsers = users.filter((user) => {
+        const search = searchTerm.toLowerCase();
+        return user.userName.toLowerCase().includes(search);
+    });
+    
     return (
         <SidebarProvider
             style={
@@ -58,6 +65,14 @@ export default function AdminUsersPage() {
                             </p>
                         </div>
 
+                        <div className="max-w-md">
+                            <Input
+                                placeholder="Search by user name..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        
                         {statusMessage && (
                             <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                                 {statusMessage}
@@ -70,7 +85,7 @@ export default function AdminUsersPage() {
                                     Loading users...
                                 </CardContent>
                             </Card>
-                        ) : users.length === 0 ? (
+                        ) : filteredUsers.length === 0 ? (
                             <Card>
                                 <CardContent className="py-8 text-center text-sm text-muted-foreground">
                                     No registered users found.
@@ -78,7 +93,7 @@ export default function AdminUsersPage() {
                             </Card>
                         ) : (
                             <div className="grid gap-4">
-                                {users.map((user) => (
+                                {filteredUsers.map((user) => (
                                     <Card
                                         key={user.userId}
                                         className="transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
