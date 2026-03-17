@@ -179,6 +179,21 @@ public class AdminController : ControllerBase
             message = "Driving center application rejected successfully."
         });
     }
+    
+    [HttpGet("dashboard-summary")]
+    public async Task<IActionResult> GetDashboardSummary()
+    {
+        var totalUsers = await _context.Users.CountAsync(u => u.UserRole == "User");
+        var totalDrivingCenters = await _context.DrivingCenters.CountAsync();
+        var pendingApplications = await _context.DrivingCenterApplications.CountAsync(a => a.Status == "Pending");
+
+        return Ok(new
+        {
+            totalUsers,
+            totalDrivingCenters,
+            pendingApplications
+        });
+    }
 
     private static string GenerateTemporaryPassword()
     {

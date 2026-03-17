@@ -65,7 +65,7 @@ public class UserController : ControllerBase
             audience: _config["Jwt:Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(
-                Convert.ToDouble(_config["Jwt:ExpireMinutes"])
+                Convert.ToDouble(_config["Jwt:DurationInMinutes"])
             ),
             signingCredentials: creds
         );
