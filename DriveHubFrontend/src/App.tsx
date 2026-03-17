@@ -15,6 +15,9 @@ import UserSearchPage from "@/pages/user/UserSearchPage.tsx";
 import UserMapPage from "@/pages/user/UserMapPage.tsx";
 import UserBookingsPage from "@/pages/user/UserBookingsPage.tsx";
 import UserProfilePage from "@/pages/user/UserProfilePage.tsx";
+import PendingDrivingCentersPage from "@/pages/admin/PendingDrivingCentersPage.tsx";
+import AdminUsersPage from "@/pages/admin/AdminUsersPage.tsx";
+import RegisteredDrivingCentersPage from "@/pages/admin/RegisteredDrivingCentersPage.tsx";
 
 
 function App() {
@@ -33,6 +36,32 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path={"/admin/driving-centers/pending"}
+                    element={
+                        <ProtectedRoute allowedRoles={["Admin"]}>
+                            <PendingDrivingCentersPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={"/admin/users"}
+                    element={
+                        <ProtectedRoute allowedRoles={["Admin"]}>
+                            <AdminUsersPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/admin/driving-centers/registered"}
+                    element={
+                        <ProtectedRoute allowedRoles={["Admin"]}>
+                            <RegisteredDrivingCentersPage />
+                        </ProtectedRoute>
+                    }
+                />
+                
                 <Route
                     path={"/user/dashboard"}
                     element={
