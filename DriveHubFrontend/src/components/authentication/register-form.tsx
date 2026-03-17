@@ -1,6 +1,5 @@
-import { Eye, EyeOff, GalleryVerticalEnd } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     Field,
@@ -17,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import GradientText from "@/components/GradientText.tsx";
 import { useState } from "react";
 import { registerUser } from "@/services/auth/authServices.tsx";
+import AuthLayout from "@/components/authentication/AuthLayout";
 
 const registerSchema = z
     .object({
@@ -44,10 +44,7 @@ const registerSchema = z
 
 type RegisterSchemaType = z.infer<typeof registerSchema>;
 
-export function RegisterForm({
-                                 className,
-                                 ...props
-                             }: React.ComponentProps<"div">) {
+export function RegisterForm() {
     const form = useForm<RegisterSchemaType>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
@@ -60,7 +57,17 @@ export function RegisterForm({
 
     const navigate = useNavigate();
 
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
+
     const handleRegister = async (data: RegisterSchemaType) => {
+        setIsSubmitting(true);
+        setStatusMessage("");
+        setStatusType("");
+
         try {
             const response = await registerUser(
                 data.userName,
@@ -68,54 +75,49 @@ export function RegisterForm({
                 data.userPassword
             );
 
-            console.log("Registration Successful:", response);
-            alert(response.message || "Registration Successful!");
+            setStatusMessage(response.message || "Registration successful.");
+            setStatusType("success");
             form.reset();
-            navigate("/login");
+
+            setTimeout(() => {
+                navigate("/login");
+            }, 1500);
         } catch (error: any) {
             if (error.response) {
                 const data = error.response.data;
 
                 if (data.errors) {
                     const messages = Object.values(data.errors).flat().join("\n");
-                    alert(`Registration failed:\n${messages}`);
+                    setStatusMessage(messages);
                 } else if (data.message) {
-                    alert(`Registration failed: ${data.message}`);
+                    setStatusMessage(data.message);
                 } else if (typeof data === "string") {
-                    alert(`Registration failed: ${data}`);
+                    setStatusMessage(data);
                 } else {
-                    alert("Registration failed.");
+                    setStatusMessage("Registration failed.");
                 }
             } else {
-                console.error("Error connecting to backend:", error.message);
-                alert("Error connecting to backend.");
+                setStatusMessage("Error connecting to backend.");
             }
+
+            setStatusType("error");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <AuthLayout
+            title="Create your account"
+            description="Join DriveHub and get started"
+        >
             <form onSubmit={form.handleSubmit(handleRegister)}>
                 <FieldGroup>
-                    <div className="flex flex-col items-center gap-2 text-center">
-                        <Link
-                            to="/"
-                            className="flex flex-col items-center gap-2 font-medium"
-                        >
-                            <div className="flex size-8 items-center justify-center rounded-md">
-                                <GalleryVerticalEnd className="size-6" />
-                            </div>
-                            <span className="sr-only">DriveHub</span>
+                    <div className="text-center text-sm text-muted-foreground">
+                        Already have an account?{" "}
+                        <Link to="/login" className="cursor-pointer hover:underline">
+                            Sign in
                         </Link>
-
-                        <h1 className="text-xl font-bold">Create your account</h1>
-
-                        <FieldDescription>
-                            Already have an account? <Link to="/login">Sign in</Link>
-                        </FieldDescription>
                     </div>
 
                     <Controller
@@ -208,8 +210,22 @@ export function RegisterForm({
                         )}
                     />
 
+                    {statusMessage && (
+                        <div
+                            className={`rounded-md border px-3 py-2 text-sm whitespace-pre-line ${
+                                statusType === "success"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                            }`}
+                        >
+                            {statusMessage}
+                        </div>
+                    )}
+
                     <Field>
-                        <Button type="submit">Register</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Registering..." : "Register"}
+                        </Button>
                     </Field>
 
                     <FieldSeparator>Or</FieldSeparator>
@@ -238,10 +254,10 @@ export function RegisterForm({
                 </FieldGroup>
             </form>
 
-            <FieldDescription className="px-6 text-center">
+            <FieldDescription className="text-center">
                 By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
                 and <a href="#">Privacy Policy</a>.
             </FieldDescription>
-        </div>
+        </AuthLayout>
     );
 }

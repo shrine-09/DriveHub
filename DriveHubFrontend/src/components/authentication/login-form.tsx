@@ -1,5 +1,4 @@
-import { Eye, EyeOff, GalleryVerticalEnd } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Field,
@@ -15,11 +14,10 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { loginUser } from "@/services/auth/authServices.tsx";
+import AuthLayout from "@/components/authentication/AuthLayout";
 
 const loginSchema = z.object({
-    userEmail: z
-        .string()
-        .email("Enter a valid email address"),
+    userEmail: z.string().email("Enter a valid email address"),
     userPassword: z
         .string()
         .min(8, "Password must be at least 8 characters"),
@@ -27,10 +25,7 @@ const loginSchema = z.object({
 
 type LoginSchemaType = z.infer<typeof loginSchema>;
 
-export function LoginForm({
-                              className,
-                              ...props
-                          }: React.ComponentProps<"div">) {
+export function LoginForm() {
     const form = useForm<LoginSchemaType>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -41,17 +36,30 @@ export function LoginForm({
 
     const navigate = useNavigate();
 
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
+
     const handleLogin = async (data: LoginSchemaType) => {
+        setIsSubmitting(true);
+        setStatusMessage("");
+        setStatusType("");
+
         try {
             const response = await loginUser(data.userEmail, data.userPassword);
-            const { token, refreshToken, role, name, email, mustChangePassword } = response;
+            const { token, refreshToken, role, name, email, mustChangePassword } =
+                response;
 
             localStorage.setItem("token", token);
+            localStorage.setItem("refreshToken", refreshToken);
             localStorage.setItem("role", role);
             localStorage.setItem("name", name);
             localStorage.setItem("email", email);
-            localStorage.setItem("mustChangePassword", String(mustChangePassword));
-            localStorage.setItem("refreshToken", refreshToken);
+            localStorage.setItem(
+                "mustChangePassword",
+                String(mustChangePassword)
+            );
 
             if (mustChangePassword) {
                 navigate("/change-password");
@@ -59,7 +67,7 @@ export function LoginForm({
             }
 
             const normalizedRole = role.toLowerCase();
-            
+
             if (normalizedRole === "admin") {
                 navigate("/admin/dashboard");
             } else if (normalizedRole === "drivingcenter") {
@@ -67,51 +75,30 @@ export function LoginForm({
             } else {
                 navigate("/user/dashboard");
             }
-
-            console.log("Login successful:", response);
         } catch (error: any) {
-            if (error.response) {
-                const data = error.response.data;
-
-                if (data.errors) {
-                    const messages = Object.values(data.errors).flat().join("\n");
-                    alert(`Login Failed:\n${messages}`);
-                } else if (data.message) {
-                    alert(`Login Failed: ${data.message}`);
-                } else if (typeof data === "string") {
-                    alert(`Login Failed: ${data}`);
-                } else {
-                    alert("Login failed.");
-                }
+            if (error.response?.data?.message) {
+                setStatusMessage(error.response.data.message);
             } else {
-                console.error("Login failed:", error.message);
-                alert("Error connecting to backend.");
+                setStatusMessage("Login failed. Please try again.");
             }
+            setStatusType("error");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const [showPassword, setShowPassword] = useState<boolean>(false);
-
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <AuthLayout
+            title="Log in to your account"
+            description="Access your DriveHub account securely"
+        >
             <form onSubmit={form.handleSubmit(handleLogin)}>
                 <FieldGroup>
-                    <div className="flex flex-col items-center gap-2 text-center">
-                        <Link
-                            to="/"
-                            className="flex flex-col items-center gap-2 font-medium"
-                        >
-                            <div className="flex size-8 items-center justify-center rounded-md">
-                                <GalleryVerticalEnd className="size-6" />
-                            </div>
-                            <span className="sr-only">DriveHub</span>
+                    <div className="text-center text-sm text-muted-foreground">
+                        Don&apos;t have an account?{" "}
+                        <Link to="/register" className="cursor-pointer hover:underline">
+                            Sign up
                         </Link>
-
-                        <h1 className="text-xl font-bold">Log in to your account</h1>
-
-                        <FieldDescription>
-                            Don&apos;t have an account? <Link to="/register">Sign up</Link>
-                        </FieldDescription>
                     </div>
 
                     <Controller
@@ -120,8 +107,14 @@ export function LoginForm({
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
                                 <FieldLabel>Email</FieldLabel>
-                                <Input {...field} type="email" placeholder="email@example.com" />
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                <Input
+                                    {...field}
+                                    type="email"
+                                    placeholder="email@example.com"
+                                />
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
+                                )}
                             </Field>
                         )}
                     />
@@ -148,24 +141,41 @@ export function LoginForm({
                                         {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                                     </Button>
                                 </div>
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                {fieldState.error && (
+                                    <FieldError errors={[fieldState.error]} />
+                                )}
                             </Field>
                         )}
                     />
 
+                    {statusMessage && (
+                        <div
+                            className={`rounded-md border px-3 py-2 text-sm ${
+                                statusType === "success"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                            }`}
+                        >
+                            {statusMessage}
+                        </div>
+                    )}
+
                     <Field>
-                        <Button type="submit">Login</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Logging in..." : "Login"}
+                        </Button>
                     </Field>
+
                     <FieldDescription className="text-center">
-                        <Link to="/forgot-password">Forgot password?</Link>
+                        <Link
+                            to="/forgot-password"
+                            className="cursor-pointer hover:underline"
+                        >
+                            Forgot password?
+                        </Link>
                     </FieldDescription>
                 </FieldGroup>
             </form>
-
-            <FieldDescription className="px-6 text-center">
-                By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-                and <a href="#">Privacy Policy</a>.
-            </FieldDescription>
-        </div>
+        </AuthLayout>
     );
 }

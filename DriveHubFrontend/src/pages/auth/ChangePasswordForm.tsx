@@ -1,20 +1,19 @@
-import { Eye, EyeOff, GalleryVerticalEnd } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
     Field,
-    FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { changePassword } from "@/services/auth/authServices.tsx";
+import AuthLayout from "@/components/authentication/AuthLayout";
 
 const changePasswordSchema = z
     .object({
@@ -35,10 +34,7 @@ const changePasswordSchema = z
 
 type ChangePasswordSchemaType = z.infer<typeof changePasswordSchema>;
 
-export default function ChangePasswordForm({
-                                               className,
-                                               ...props
-                                           }: React.ComponentProps<"div">) {
+export default function ChangePasswordForm() {
     const form = useForm<ChangePasswordSchemaType>({
         resolver: zodResolver(changePasswordSchema),
         defaultValues: {
@@ -53,8 +49,15 @@ export default function ChangePasswordForm({
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
 
     const handleChangePassword = async (data: ChangePasswordSchemaType) => {
+        setIsSubmitting(true);
+        setStatusMessage("");
+        setStatusType("");
+
         try {
             const response = await changePassword(
                 data.currentPassword,
@@ -62,63 +65,53 @@ export default function ChangePasswordForm({
                 data.confirmNewPassword
             );
 
-            alert(response.message || "Password changed successfully.");
+            setStatusMessage(response.message || "Password changed successfully.");
+            setStatusType("success");
             form.reset();
-
             localStorage.removeItem("mustChangePassword");
 
             const role = localStorage.getItem("role");
 
-            if (role === "Admin") {
-                navigate("/admin/dashboard");
-            } else if (role === "DrivingCenter") {
-                navigate("/driving-center/dashboard");
-            } else {
-                navigate("/user/dashboard");
-            }
+            setTimeout(() => {
+                if (role === "Admin") {
+                    navigate("/admin/dashboard");
+                } else if (role === "DrivingCenter") {
+                    navigate("/driving-center/dashboard");
+                } else {
+                    navigate("/user/dashboard");
+                }
+            }, 1500);
         } catch (error: any) {
             if (error.response) {
                 const data = error.response.data;
 
                 if (data.errors) {
                     const messages = Object.values(data.errors).flat().join("\n");
-                    alert(`Change Password Failed:\n${messages}`);
+                    setStatusMessage(messages);
                 } else if (data.message) {
-                    alert(`Change Password Failed: ${data.message}`);
+                    setStatusMessage(data.message);
                 } else if (typeof data === "string") {
-                    alert(`Change Password Failed: ${data}`);
+                    setStatusMessage(data);
                 } else {
-                    alert("Change password failed.");
+                    setStatusMessage("Change password failed.");
                 }
             } else {
-                alert("Error connecting to backend.");
+                setStatusMessage("Error connecting to backend.");
             }
+
+            setStatusType("error");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-            <div className={cn("w-full max-w-sm", className)} {...props}>
-                <form onSubmit={form.handleSubmit(handleChangePassword)}>
-                    <FieldGroup>
-                    <div className="flex flex-col items-center gap-2 text-center">
-                        <Link
-                            to="/"
-                            className="flex flex-col items-center gap-2 font-medium"
-                        >
-                            <div className="flex size-8 items-center justify-center rounded-md">
-                                <GalleryVerticalEnd className="size-6" />
-                            </div>
-                            <span className="sr-only">DriveHub</span>
-                        </Link>
-
-                        <h1 className="text-xl font-bold">Change Password</h1>
-
-                        <FieldDescription>
-                            Update your account password securely
-                        </FieldDescription>
-                    </div>
-
+        <AuthLayout
+            title="Change Password"
+            description="Update your account password securely"
+        >
+            <form onSubmit={form.handleSubmit(handleChangePassword)}>
+                <FieldGroup>
                     <Controller
                         control={form.control}
                         name="currentPassword"
@@ -136,9 +129,7 @@ export default function ChangePasswordForm({
                                         size="icon"
                                         variant="ghost"
                                         className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
-                                        onClick={() =>
-                                            setShowCurrentPassword((prev) => !prev)
-                                        }
+                                        onClick={() => setShowCurrentPassword((prev) => !prev)}
                                     >
                                         {showCurrentPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                                     </Button>
@@ -208,16 +199,25 @@ export default function ChangePasswordForm({
                         )}
                     />
 
+                    {statusMessage && (
+                        <div
+                            className={`rounded-md border px-3 py-2 text-sm whitespace-pre-line ${
+                                statusType === "success"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                            }`}
+                        >
+                            {statusMessage}
+                        </div>
+                    )}
+
                     <Field>
-                        <Button type="submit">Update Password</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Updating..." : "Update Password"}
+                        </Button>
                     </Field>
                 </FieldGroup>
-                </form>
-            </div>
-        </div>
+            </form>
+        </AuthLayout>
     );
-}  
-        
-        
-        
-        
+}
