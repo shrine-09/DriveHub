@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -5,8 +6,37 @@ import {
     SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getUsers } from "@/services/admin/adminServices";
+
+type AdminUser = {
+    userId: number;
+    userName: string;
+    userEmail: string;
+    userRole: string;
+};
 
 export default function AdminUsersPage() {
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [statusMessage, setStatusMessage] = useState("");
+
+    useEffect(() => {
+        const loadUsers = async () => {
+            try {
+                const data = await getUsers();
+                setUsers(data);
+            } catch (error: any) {
+                setStatusMessage(
+                    error.response?.data?.message || "Failed to load users."
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadUsers();
+    }, []);
+
     return (
         <SidebarProvider
             style={
@@ -24,18 +54,58 @@ export default function AdminUsersPage() {
                         <div className="space-y-2">
                             <h1 className="text-2xl font-bold tracking-tight">Manage Users</h1>
                             <p className="text-sm text-muted-foreground">
-                                This page will let the admin view and manage registered normal users.
+                                View all registered normal users in the system.
                             </p>
                         </div>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Users</CardTitle>
-                            </CardHeader>
-                            <CardContent className="text-sm text-muted-foreground">
-                                User listing, search, blocking, and management features will be added here.
-                            </CardContent>
-                        </Card>
+                        {statusMessage && (
+                            <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+                                {statusMessage}
+                            </div>
+                        )}
+
+                        {isLoading ? (
+                            <Card>
+                                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                                    Loading users...
+                                </CardContent>
+                            </Card>
+                        ) : users.length === 0 ? (
+                            <Card>
+                                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                                    No registered users found.
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="grid gap-4">
+                                {users.map((user) => (
+                                    <Card
+                                        key={user.userId}
+                                        className="transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                                    >
+                                        <CardHeader>
+                                            <CardTitle className="text-lg">{user.userName}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2 text-sm">
+                                            <div>
+                                                <p className="text-muted-foreground">Email</p>
+                                                <p className="font-medium break-all">{user.userEmail}</p>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-muted-foreground">Role</p>
+                                                <p className="font-medium">{user.userRole}</p>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-muted-foreground">User ID</p>
+                                                <p className="font-medium">{user.userId}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </SidebarInset>

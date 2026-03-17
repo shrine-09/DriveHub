@@ -16,9 +16,9 @@ export default function AuthLayout({
                                    }: AuthLayoutProps) {
     return (
         <div className="relative min-h-svh bg-background">
-            <div className="absolute left-6 top-6">
+            <div className="absolute left-6 top-7.5">
                 <Link to="/" className="flex items-center gap-2 font-medium cursor-pointer">
-                    <span className="text-base font-semibold">DriveHub</span>
+                    <span className="text-xl font-semibold">DriveHub</span>
                 </Link>
             </div>
 

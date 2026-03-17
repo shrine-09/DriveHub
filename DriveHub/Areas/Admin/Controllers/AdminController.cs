@@ -4,6 +4,7 @@ using DriveHub.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using DriveHub.Services;
 
 namespace DriveHub.Areas.Admin.Controllers;
 
@@ -13,10 +14,12 @@ namespace DriveHub.Areas.Admin.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public AdminController(ApplicationDbContext context)
+    public AdminController(ApplicationDbContext context, IEmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
     [HttpGet("pending-driving-center-applications")]
@@ -145,6 +148,22 @@ public class AdminController : ControllerBase
         _context.DrivingCenters.Add(drivingCenter);
 
         await _context.SaveChangesAsync();
+        
+        var emailBody = $@"
+            <h2>DriveHub Application Approved</h2>
+            <p>Congratulations, your driving center application has been approved.</p>
+            <p>You can now log in using the credentials below:</p>
+            <p><strong>Login Email:</strong> {user.UserEmail}</p>
+            <p><strong>Temporary Password:</strong> {temporaryPassword}</p>
+            <p>For security reasons, you will be asked to change your password on first login.</p>
+            <p>You can log in from the DriveHub website.</p>
+        ";
+
+        await _emailService.SendEmailAsync(
+            user.UserEmail,
+            "DriveHub Application Approved",
+            emailBody
+        );
 
         return Ok(new
         {
@@ -221,5 +240,44 @@ public class AdminController : ControllerBase
         return new string(passwordChars
             .OrderBy(_ => random.Next())
             .ToArray());
+    }
+    
+    [HttpGet("users")]
+    public async Task<IActionResult> GetUsers()
+    {
+        var users = await _context.Users
+            .Where(u => u.UserRole == "User")
+            .OrderByDescending(u => u.UserId)
+            .Select(u => new
+            {
+                u.UserId,
+                u.UserName,
+                u.UserEmail,
+                u.UserRole
+            })
+            .ToListAsync();
+
+        return Ok(users);
+    }
+    
+    [HttpGet("driving-centers/registered")]
+    public async Task<IActionResult> GetRegisteredDrivingCenters()
+    {
+        var centers = await _context.DrivingCenters
+            .OrderByDescending(dc => dc.Id)
+            .Select(dc => new
+            {
+                dc.Id,
+                dc.CompanyName,
+                dc.RegistrationNumber,
+                dc.CompanyEmail,
+                dc.CompanyContact,
+                dc.CompanyType,
+                dc.IsVerified,
+                dc.UserId
+            })
+            .ToListAsync();
+
+        return Ok(centers);
     }
 }

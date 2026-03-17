@@ -9,7 +9,6 @@ export default function LandingPage() {
     return (
         <div>
             {/* Fullscreen Background */}
-
             <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
                 <Threads
                     amplitude={1}

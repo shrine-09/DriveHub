@@ -31,3 +31,16 @@ export const rejectDrivingCenterApplication = async (
 
     return response.data;
 };
+
+export const getUsers = async () => {
+    const response = await apiClient.get(`${API_BASE_ADMIN}/users`);
+    return response.data;
+};
+
+export const getRegisteredDrivingCenters = async () => {
+    const response = await apiClient.get(
+        `${API_BASE_ADMIN}/driving-centers/registered`
+    );
+
+    return response.data;
+};
