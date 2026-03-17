@@ -37,7 +37,7 @@ const centerSchema = z.object({
 
 type CenterFormType = z.infer<typeof centerSchema>;
 
-export function CentersRegisterForm() {
+export default function CentersRegisterPage() {
     const form = useForm<CenterFormType>({
         resolver: zodResolver(centerSchema),
         defaultValues: {

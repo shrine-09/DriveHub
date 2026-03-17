@@ -11,6 +11,10 @@ import DrivingCenterDashboard from "@/pages/drivingCenter/DrivingCenterDashboard
 import ChangePasswordForm from "@/pages/auth/ChangePasswordForm.tsx";
 import ForgotPasswordForm from "@/pages/auth/ForgotPasswordForm.tsx";
 import ResetPasswordForm from "@/pages/auth/ResetPasswordForm.tsx";
+import UserSearchPage from "@/pages/user/UserSearchPage.tsx";
+import UserMapPage from "@/pages/user/UserMapPage.tsx";
+import UserBookingsPage from "@/pages/user/UserBookingsPage.tsx";
+import UserProfilePage from "@/pages/user/UserProfilePage.tsx";
 
 
 function App() {
@@ -34,6 +38,41 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["User"]}>
                             <UserDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path={"/user/search"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserSearchPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/user/map"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserMapPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/user/bookings"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserBookingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/user/profile"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserProfilePage />
                         </ProtectedRoute>
                     }
                 />
