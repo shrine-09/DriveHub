@@ -90,13 +90,12 @@ export function LoginForm() {
     return (
         <AuthLayout
             title="Log in to your account"
-            description="Access your DriveHub account securely"
         >
             <form onSubmit={form.handleSubmit(handleLogin)}>
                 <FieldGroup>
                     <div className="text-center text-sm text-muted-foreground">
                         Don&apos;t have an account?{" "}
-                        <Link to="/register" className="cursor-pointer hover:underline">
+                        <Link to="/register" className="cursor-pointer underline">
                             Sign up
                         </Link>
                     </div>

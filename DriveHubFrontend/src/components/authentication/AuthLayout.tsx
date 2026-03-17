@@ -1,4 +1,3 @@
-import { GalleryVerticalEnd } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +18,6 @@ export default function AuthLayout({
         <div className="relative min-h-svh bg-background">
             <div className="absolute left-6 top-6">
                 <Link to="/" className="flex items-center gap-2 font-medium cursor-pointer">
-                    <div className="flex size-8 items-center justify-center rounded-md">
-                        <GalleryVerticalEnd className="size-6" />
-                    </div>
                     <span className="text-base font-semibold">DriveHub</span>
                 </Link>
             </div>

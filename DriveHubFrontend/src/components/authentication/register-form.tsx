@@ -109,13 +109,12 @@ export function RegisterForm() {
     return (
         <AuthLayout
             title="Create your account"
-            description="Join DriveHub and get started"
         >
             <form onSubmit={form.handleSubmit(handleRegister)}>
                 <FieldGroup>
                     <div className="text-center text-sm text-muted-foreground">
                         Already have an account?{" "}
-                        <Link to="/login" className="cursor-pointer hover:underline">
+                        <Link to="/login" className="cursor-pointer underline">
                             Sign in
                         </Link>
                     </div>
