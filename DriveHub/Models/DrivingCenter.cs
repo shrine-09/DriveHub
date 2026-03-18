@@ -16,5 +16,14 @@ public class DrivingCenter
     public string CompanyType { get; set; } = string.Empty;
     public bool IsVerified { get; set; } = false;
 
+    public string? Address { get; set; }
+    public string? District { get; set; }
+    public string? Municipality { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Description { get; set; }
+    public bool IsProfileComplete { get; set; } = false;
+
     public ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
+    public ICollection<DrivingCenterPackage> Packages { get; set; } = new List<DrivingCenterPackage>();
 }
