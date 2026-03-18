@@ -13,9 +13,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<DrivingCenter> DrivingCenters { get; set; }
     public DbSet<DrivingCenterApplication> DrivingCenterApplications { get; set; }
+    public DbSet<DrivingCenterPackage> DrivingCenterPackages { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
-    
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,7 +42,13 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DrivingCenterApplication>()
             .HasIndex(a => a.CompanyEmail)
             .IsUnique(false);
-        
+
+        modelBuilder.Entity<DrivingCenterPackage>()
+            .HasOne(p => p.DrivingCenter)
+            .WithMany(dc => dc.Packages)
+            .HasForeignKey(p => p.DrivingCenterId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<PasswordResetToken>()
             .HasOne(prt => prt.User)
             .WithMany(u => u.PasswordResetTokens)
@@ -51,7 +57,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<PasswordResetToken>()
             .HasIndex(prt => prt.TokenHash)
             .IsUnique();
-        
+
         modelBuilder.Entity<RefreshToken>()
             .HasOne(rt => rt.User)
             .WithMany(u => u.RefreshTokens)
