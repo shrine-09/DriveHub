@@ -14,8 +14,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-
-import UserLayout from "@/components/user/UserLayout";
+import DrivingCenterLayout from "@/components/drivingCenter/DrivingCenterLayout";
 import { getDrivingCenterDashboardSummary } from "@/services/auth/authServices";
 
 type DrivingCenterDashboardSummary = {
@@ -50,7 +49,7 @@ export default function DrivingCenterDashboard() {
     }, []);
 
     return (
-        <UserLayout>
+        <DrivingCenterLayout>
             <div className="space-y-8">
                 <section className="overflow-hidden rounded-3xl border border-blue-200/60 bg-gradient-to-br from-[#1E3A5F] via-[#334155] to-[#3B82F6] p-6 text-white shadow-sm md:p-10">
                     <div className="space-y-4">
@@ -176,6 +175,6 @@ export default function DrivingCenterDashboard() {
                     </>
                 ) : null}
             </div>
-        </UserLayout>
+        </DrivingCenterLayout>
     );
 }

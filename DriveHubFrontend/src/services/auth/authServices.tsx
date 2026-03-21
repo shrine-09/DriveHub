@@ -149,3 +149,49 @@ export const getDrivingCenterDashboardSummary = async () => {
 
     return response.data;
 };
+
+export const bookDrivingCenter = async (payload: {
+    drivingCenterId: number;
+    serviceType: string;
+    durationType: string;
+    startDate: string;
+}) => {
+    const response = await apiClient.post(
+        "https://localhost:7234/api/users/User/book-driving-center",
+        payload
+    );
+
+    return response.data;
+};
+
+export const getPendingLearners = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/pending-bookings"
+    );
+
+    return response.data;
+};
+
+export const startTraining = async (bookingId: number) => {
+    const response = await apiClient.put(
+        `https://localhost:7234/api/drivingcenters/DrivingCenter/start-training/${bookingId}`
+    );
+
+    return response.data;
+};
+
+export const getActiveLearners = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/active-learners"
+    );
+
+    return response.data;
+};
+
+export const getInactiveLearners = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/inactive-learners"
+    );
+
+    return response.data;
+};

@@ -19,6 +19,9 @@ import PendingDrivingCentersPage from "@/pages/admin/PendingDrivingCentersPage.t
 import AdminUsersPage from "@/pages/admin/AdminUsersPage.tsx";
 import RegisteredDrivingCentersPage from "@/pages/admin/RegisteredDrivingCentersPage.tsx";
 import DrivingCenterSetupProfilePage from "@/pages/drivingCenter/DrivingCenterSetupProfilePage.tsx";
+import NewLearnersPage from "@/pages/drivingCenter/NewLearnersPage.tsx";
+import ActiveLearnersPage from "@/pages/drivingCenter/ActiveLearnersPage.tsx";
+import InactiveLearnersPage from "@/pages/drivingCenter/InactiveLearnersPage.tsx";
 
 
 function App() {
@@ -121,6 +124,33 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["DrivingCenter"]}>
                             <DrivingCenterSetupProfilePage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/driving-center/new-learners"}
+                    element={
+                        <ProtectedRoute allowedRoles={["DrivingCenter"]}>
+                            <NewLearnersPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/driving-center/active-learners"}
+                    element={
+                        <ProtectedRoute allowedRoles={["DrivingCenter"]}>
+                            <ActiveLearnersPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/driving-center/inactive-learners"}
+                    element={
+                        <ProtectedRoute allowedRoles={["DrivingCenter"]}>
+                            <InactiveLearnersPage />
                         </ProtectedRoute>
                     }
                 />

@@ -1,0 +1,139 @@
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+    LayoutDashboard,
+    UserPlus,
+    Users,
+    UserX,
+    Settings,
+    LogOut,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const mainNavItems = [
+    {
+        label: "Dashboard",
+        path: "/driving-center/dashboard",
+        icon: LayoutDashboard,
+    },
+    {
+        label: "New Learners",
+        path: "/driving-center/new-learners",
+        icon: UserPlus,
+    },
+    {
+        label: "Active Learners",
+        path: "/driving-center/active-learners",
+        icon: Users,
+    },
+    {
+        label: "Inactive Learners",
+        path: "/driving-center/inactive-learners",
+        icon: UserX,
+    },
+];
+
+const bottomNavItems = [
+    {
+        label: "Profile",
+        path: "/driving-center/profile",
+        icon: Settings,
+    },
+];
+
+export default function DrivingCenterSidebar() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const name = localStorage.getItem("name") || "Driving Center";
+
+    const handleLogout = () => {
+        const confirmed = window.confirm("Are you sure you want to logout?");
+        if (!confirmed) return;
+
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("role");
+        localStorage.removeItem("name");
+        localStorage.removeItem("email");
+        localStorage.removeItem("mustChangePassword");
+        localStorage.removeItem("isProfileComplete");
+        navigate("/login");
+    };
+
+    return (
+        <aside className="flex h-screen w-72 flex-col border-r border-slate-200 bg-white/80 backdrop-blur">
+            <div className="border-b border-slate-200 px-6 py-5">
+                <Link
+                    to="/driving-center/dashboard"
+                    className="text-xl font-bold text-[#1E293B]"
+                >
+                    DriveHub
+                </Link>
+                <p className="mt-1 text-sm text-slate-500">Driving Center Panel</p>
+            </div>
+
+            <div className="px-6 py-4">
+                <p className="text-sm text-slate-500">Signed in as</p>
+                <p className="font-medium text-slate-900">{name}</p>
+            </div>
+
+            <nav className="flex-1 px-3">
+                <div className="space-y-1">
+                    {mainNavItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = location.pathname === item.path;
+
+                        return (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                                    isActive
+                                        ? "bg-blue-50 text-[#2563EB]"
+                                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                                }`}
+                            >
+                                <Icon className="size-4" />
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </div>
+
+                <div className="mt-6 border-t border-slate-200 pt-4">
+                    <div className="space-y-1">
+                        {bottomNavItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = location.pathname === item.path;
+
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                                        isActive
+                                            ? "bg-blue-50 text-[#2563EB]"
+                                            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                                    }`}
+                                >
+                                    <Icon className="size-4" />
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            </nav>
+
+            <div className="border-t border-slate-200 p-4">
+                <Button
+                    variant="outline"
+                    onClick={handleLogout}
+                    className="w-full cursor-pointer justify-start border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                >
+                    <LogOut className="mr-2 size-4" />
+                    Logout
+                </Button>
+            </div>
+        </aside>
+    );
+}
