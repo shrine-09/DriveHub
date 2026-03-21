@@ -48,14 +48,14 @@ export function LoginForm() {
 
         try {
             const response = await loginUser(data.userEmail, data.userPassword);
-            const { token, refreshToken, role, name, email, mustChangePassword } =
-                response;
+            const { token, refreshToken, role, name, email, mustChangePassword, isProfileComplete } = response;
 
             localStorage.setItem("token", token);
             localStorage.setItem("refreshToken", refreshToken);
             localStorage.setItem("role", role);
             localStorage.setItem("name", name);
             localStorage.setItem("email", email);
+            localStorage.setItem("isProfileComplete", String(isProfileComplete));
             localStorage.setItem(
                 "mustChangePassword",
                 String(mustChangePassword)
@@ -63,6 +63,11 @@ export function LoginForm() {
 
             if (mustChangePassword) {
                 navigate("/change-password");
+                return;
+            }
+
+            if (role === "DrivingCenter" && !isProfileComplete) {
+                navigate("/driving-center/setup-profile");
                 return;
             }
 

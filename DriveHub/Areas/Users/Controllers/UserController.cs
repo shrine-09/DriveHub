@@ -135,6 +135,16 @@ public class UserController : ControllerBase
         _db.RefreshTokens.Add(refreshToken);
         await _db.SaveChangesAsync();
 
+        bool isProfileComplete = true;
+
+        if (user.UserRole == "DrivingCenter")
+        {
+            var center = await _db.DrivingCenters
+                .FirstOrDefaultAsync(dc => dc.UserId == user.UserId);
+
+            isProfileComplete = center?.IsProfileComplete ?? false;
+        }
+        
         return Ok(new
         {
             token = accessToken,
@@ -142,7 +152,8 @@ public class UserController : ControllerBase
             name = user.UserName,
             email = user.UserEmail,
             role = user.UserRole,
-            mustChangePassword = user.MustChangePassword
+            mustChangePassword = user.MustChangePassword,
+            isProfileComplete = isProfileComplete
         });
     }
     

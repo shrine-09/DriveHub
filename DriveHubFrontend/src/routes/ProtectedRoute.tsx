@@ -16,6 +16,7 @@ export default function ProtectedRoute({
     const role = localStorage.getItem("role");
     const location = useLocation();
     const mustChangePassword = localStorage.getItem("mustChangePassword");
+    const isProfileComplete = localStorage.getItem("isProfileComplete");
 
     if (!token) {
         return <Navigate to="/login" replace />;
@@ -26,6 +27,15 @@ export default function ProtectedRoute({
         location.pathname !== "/change-password"
     ) {
         return <Navigate to="/change-password" replace />;
+    }
+
+    if (
+        role === "DrivingCenter" &&
+        isProfileComplete === "false" &&
+        location.pathname !== "/driving-center/setup-profile" &&
+        location.pathname !== "/change-password"
+    ) {
+        return <Navigate to="/driving-center/setup-profile" replace />;
     }
 
     if (allowedRoles && (!role || !allowedRoles.includes(role as Role))) {

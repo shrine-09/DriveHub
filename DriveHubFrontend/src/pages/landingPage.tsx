@@ -1,26 +1,25 @@
 import { Button } from "@/components/ui/button.tsx";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient.tsx";
 import { useNavigate } from "react-router-dom";
-import roadBg from "@/assets/road-bg.png";
+import roadBg from "@/assets/road-bg.png"; // change extension if needed
 
 export default function LandingPage() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-[#F8F7F4] text-[#2F2F2F]">
-            {/* Hero Section */}
+        <div className="min-h-screen bg-[#F8F7F4] text-[#1E293B]">
             <section className="relative min-h-screen overflow-hidden">
-                {/* Background Image */}
+                {/* Background image */}
                 <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                     style={{ backgroundImage: `url(${roadBg})` }}
                 />
 
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/20" />
+                {/* Cool blue-grey overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1E3A5F]/75 via-[#334155]/45 to-white/10" />
 
-                {/* Soft warm tint */}
-                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,167,44,0.18),transparent_40%,rgba(0,0,0,0.15))]" />
+                {/* Soft misty layer */}
+                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(59,130,246,0.12),rgba(248,247,244,0.12),transparent_70%)]" />
 
                 {/* Navbar */}
                 <header className="absolute top-0 left-0 z-20 w-full">
@@ -41,7 +40,7 @@ export default function LandingPage() {
                                 containerClassName="rounded-full"
                                 as="button"
                                 onClick={() => navigate("/register")}
-                                className="flex cursor-pointer items-center space-x-2 bg-white text-sm font-semibold text-black"
+                                className="flex cursor-pointer items-center space-x-2 bg-white text-sm font-semibold text-[#1E3A5F]"
                             >
                                 Join Us
                             </HoverBorderGradient>
@@ -52,7 +51,7 @@ export default function LandingPage() {
                 {/* Hero Content */}
                 <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center px-6">
                     <div className="max-w-3xl space-y-6">
-                        <div className="inline-flex rounded-full border border-[#ECA72C]/30 bg-[#ECA72C]/15 px-4 py-1 text-sm font-medium text-[#ffd58a] backdrop-blur-sm">
+                        <div className="inline-flex rounded-full border border-blue-200/30 bg-white/10 px-4 py-1 text-sm font-medium text-blue-100 backdrop-blur-sm">
                             Find the right driving center with confidence
                         </div>
 
@@ -60,7 +59,7 @@ export default function LandingPage() {
                             <h1 className="text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl">
                                 DriveHub
                             </h1>
-                            <p className="max-w-2xl text-base leading-7 text-white/85 md:text-lg">
+                            <p className="max-w-2xl text-base leading-7 text-slate-100/90 md:text-lg">
                                 Discover verified driving centers, compare services, explore
                                 locations on a map, and connect with the right training center
                                 for your journey.
@@ -70,7 +69,7 @@ export default function LandingPage() {
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <Button
                                 onClick={() => navigate("/register")}
-                                className="cursor-pointer bg-[#F95738] px-6 py-6 text-base font-semibold text-white hover:bg-[#f26a50]"
+                                className="cursor-pointer bg-[#3B82F6] px-6 py-6 text-base font-semibold text-white hover:bg-[#2563EB]"
                             >
                                 Get Started
                             </Button>
@@ -87,35 +86,35 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Simple lower section to blend into light theme */}
+            {/* Lower blend section */}
             <section className="bg-[#F8F7F4] px-6 py-16">
                 <div className="mx-auto max-w-7xl">
                     <div className="grid gap-6 md:grid-cols-3">
-                        <div className="rounded-2xl border border-black/5 bg-white/70 p-6 shadow-sm backdrop-blur-sm">
-                            <h3 className="mb-2 text-lg font-semibold text-[#2F2F2F]">
+                        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
+                            <h3 className="mb-2 text-lg font-semibold text-[#1E293B]">
                                 Verified Centers
                             </h3>
-                            <p className="text-sm leading-6 text-[#5b5b5b]">
+                            <p className="text-sm leading-6 text-slate-600">
                                 Explore trusted driving centers with real information and
                                 approval-based registration.
                             </p>
                         </div>
 
-                        <div className="rounded-2xl border border-black/5 bg-white/70 p-6 shadow-sm backdrop-blur-sm">
-                            <h3 className="mb-2 text-lg font-semibold text-[#2F2F2F]">
+                        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
+                            <h3 className="mb-2 text-lg font-semibold text-[#1E293B]">
                                 Search & Map Discovery
                             </h3>
-                            <p className="text-sm leading-6 text-[#5b5b5b]">
+                            <p className="text-sm leading-6 text-slate-600">
                                 Search by name or location and browse driving centers visually
                                 on the map.
                             </p>
                         </div>
 
-                        <div className="rounded-2xl border border-black/5 bg-white/70 p-6 shadow-sm backdrop-blur-sm">
-                            <h3 className="mb-2 text-lg font-semibold text-[#2F2F2F]">
+                        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
+                            <h3 className="mb-2 text-lg font-semibold text-[#1E293B]">
                                 Built for Nepal
                             </h3>
-                            <p className="text-sm leading-6 text-[#5b5b5b]">
+                            <p className="text-sm leading-6 text-slate-600">
                                 A platform designed to make driving center discovery and
                                 management simpler and more organized.
                             </p>

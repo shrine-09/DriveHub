@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DriveHub")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9e07bf579bc280055749aa493fa1b2b7ab004a60")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9cc71b604ef9253d9913b7b545d56e81bbdad995")]
 [assembly: System.Reflection.AssemblyProductAttribute("DriveHub")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DriveHub")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
