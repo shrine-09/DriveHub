@@ -110,3 +110,32 @@ export const resetPassword = async (
 
     return response.data;
 };
+
+export const getDrivingCenterProfile = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/my-profile"
+    );
+
+    return response.data;
+};
+
+export const setupDrivingCenterProfile = async (payload: {
+    address: string;
+    district: string;
+    municipality: string;
+    latitude: number | null;
+    longitude: number | null;
+    description: string;
+    packages: {
+        serviceType: string;
+        durationType: string;
+        priceNpr: number;
+    }[];
+}) => {
+    const response = await apiClient.post(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/setup-profile",
+        payload
+    );
+
+    return response.data;
+};

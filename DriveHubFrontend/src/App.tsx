@@ -18,6 +18,7 @@ import UserProfilePage from "@/pages/user/UserProfilePage.tsx";
 import PendingDrivingCentersPage from "@/pages/admin/PendingDrivingCentersPage.tsx";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage.tsx";
 import RegisteredDrivingCentersPage from "@/pages/admin/RegisteredDrivingCentersPage.tsx";
+import DrivingCenterSetupProfilePage from "@/pages/drivingCenter/DrivingCenterSetupProfilePage.tsx";
 
 
 function App() {
@@ -114,6 +115,16 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
+                <Route
+                    path={"/driving-center/setup-profile"}
+                    element={
+                        <ProtectedRoute allowedRoles={["DrivingCenter"]}>
+                            <DrivingCenterSetupProfilePage />
+                        </ProtectedRoute>
+                    }
+                />
+                
                 <Route
                     path={"/change-password"}
                     element={
