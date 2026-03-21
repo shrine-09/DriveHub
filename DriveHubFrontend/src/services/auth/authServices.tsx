@@ -141,3 +141,11 @@ export const setupDrivingCenterProfile = async (payload: {
 
     return response.data;
 };
+
+export const getDrivingCenterDashboardSummary = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/dashboard-summary"
+    );
+
+    return response.data;
+};

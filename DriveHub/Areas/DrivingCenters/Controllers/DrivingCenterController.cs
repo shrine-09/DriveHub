@@ -127,4 +127,31 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(new { message = "Driving center profile setup completed successfully." });
     }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpGet("dashboard-summary")]
+    public async Task<IActionResult> GetDashboardSummary()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .Include(dc => dc.Packages)
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        return Ok(new
+        {
+            center.CompanyName,
+            center.IsProfileComplete,
+            center.Address,
+            center.District,
+            center.Municipality,
+            packagesCount = center.Packages.Count
+        });
+    }
 }
