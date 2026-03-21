@@ -53,6 +53,9 @@ export default function ChangePasswordForm() {
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
 
+    const inputClassName =
+        "!text-white !placeholder:text-slate-200/80 border-white/20 bg-white/10";
+
     const handleChangePassword = async (data: ChangePasswordSchemaType) => {
         setIsSubmitting(true);
         setStatusMessage("");
@@ -117,18 +120,21 @@ export default function ChangePasswordForm() {
                         name="currentPassword"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel>Current Password</FieldLabel>
+                                <FieldLabel className="!text-white">Current Password</FieldLabel>
                                 <div className="relative">
                                     <Input
                                         {...field}
                                         type={showCurrentPassword ? "text" : "password"}
+                                        name="current-password"
+                                        autoComplete="current-password"
                                         placeholder="********"
+                                        className={`${inputClassName} pr-10`}
                                     />
                                     <Button
                                         type="button"
                                         size="icon"
                                         variant="ghost"
-                                        className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
+                                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-200 hover:bg-transparent hover:text-white"
                                         onClick={() => setShowCurrentPassword((prev) => !prev)}
                                     >
                                         {showCurrentPassword ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -144,18 +150,21 @@ export default function ChangePasswordForm() {
                         name="newPassword"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel>New Password</FieldLabel>
+                                <FieldLabel className="!text-white">New Password</FieldLabel>
                                 <div className="relative">
                                     <Input
                                         {...field}
                                         type={showNewPassword ? "text" : "password"}
+                                        name="new-password"
+                                        autoComplete="new-password"
                                         placeholder="********"
+                                        className={`${inputClassName} pr-10`}
                                     />
                                     <Button
                                         type="button"
                                         size="icon"
                                         variant="ghost"
-                                        className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
+                                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-200 hover:bg-transparent hover:text-white"
                                         onClick={() => setShowNewPassword((prev) => !prev)}
                                     >
                                         {showNewPassword ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -171,21 +180,24 @@ export default function ChangePasswordForm() {
                         name="confirmNewPassword"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel>Confirm New Password</FieldLabel>
+                                <FieldLabel className="!text-white">
+                                    Confirm New Password
+                                </FieldLabel>
                                 <div className="relative">
                                     <Input
                                         {...field}
                                         type={showConfirmNewPassword ? "text" : "password"}
+                                        name="confirm-password"
+                                        autoComplete="new-password"
                                         placeholder="********"
+                                        className={`${inputClassName} pr-10`}
                                     />
                                     <Button
                                         type="button"
                                         size="icon"
                                         variant="ghost"
-                                        className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
-                                        onClick={() =>
-                                            setShowConfirmNewPassword((prev) => !prev)
-                                        }
+                                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-200 hover:bg-transparent hover:text-white"
+                                        onClick={() => setShowConfirmNewPassword((prev) => !prev)}
                                     >
                                         {showConfirmNewPassword ? (
                                             <Eye size={16} />
@@ -203,8 +215,8 @@ export default function ChangePasswordForm() {
                         <div
                             className={`rounded-md border px-3 py-2 text-sm whitespace-pre-line ${
                                 statusType === "success"
-                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-100"
+                                    : "border-red-500/30 bg-red-500/10 text-red-100"
                             }`}
                         >
                             {statusMessage}
@@ -212,7 +224,11 @@ export default function ChangePasswordForm() {
                     )}
 
                     <Field>
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full !text-white bg-[#3B82F6] hover:bg-[#2563EB]"
+                        >
                             {isSubmitting ? "Updating..." : "Update Password"}
                         </Button>
                     </Field>

@@ -98,11 +98,13 @@ export const forgotPassword = async (email: string) => {
 };
 
 export const resetPassword = async (
+    email: string,
     token: string,
     newPassword: string,
     confirmNewPassword: string
 ) => {
     const response = await apiClient.post(`${API_BASE_USER}/reset-password`, {
+        email,
         token,
         newPassword,
         confirmNewPassword,

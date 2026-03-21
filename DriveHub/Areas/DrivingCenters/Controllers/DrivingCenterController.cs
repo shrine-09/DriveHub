@@ -63,6 +63,9 @@ public class DrivingCenterController : ControllerBase
     [HttpPost("setup-profile")]
     public async Task<IActionResult> SetupProfile([FromBody] DrivingCenterProfileSetupDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (!int.TryParse(userIdClaim, out var userId))
@@ -75,12 +78,38 @@ public class DrivingCenterController : ControllerBase
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
 
-        center.Address = dto.Address;
-        center.District = dto.District;
-        center.Municipality = dto.Municipality;
+        if (dto.Latitude is < -90 or > 90)
+            return BadRequest(new { message = "Latitude must be between -90 and 90." });
+
+        if (dto.Longitude is < -180 or > 180)
+            return BadRequest(new { message = "Longitude must be between -180 and 180." });
+
+        var allowedServices = new[] { "Bike", "Car" };
+        var allowedDurations = new[] { "2Weeks", "1Month" };
+
+        if (dto.Packages == null || dto.Packages.Count == 0)
+            return BadRequest(new { message = "At least one service package is required." });
+
+        foreach (var pkg in dto.Packages)
+        {
+            if (!allowedServices.Contains(pkg.ServiceType))
+                return BadRequest(new { message = $"Invalid service type: {pkg.ServiceType}" });
+
+            if (!allowedDurations.Contains(pkg.DurationType))
+                return BadRequest(new { message = $"Invalid duration type: {pkg.DurationType}" });
+
+            if (pkg.PriceNpr <= 0)
+                return BadRequest(new { message = "Package price must be greater than 0." });
+        }
+
+        center.Address = dto.Address.Trim();
+        center.District = dto.District.Trim();
+        center.Municipality = dto.Municipality.Trim();
         center.Latitude = dto.Latitude;
         center.Longitude = dto.Longitude;
-        center.Description = dto.Description;
+        center.Description = string.IsNullOrWhiteSpace(dto.Description)
+            ? null
+            : dto.Description.Trim();
         center.IsProfileComplete = true;
 
         _context.DrivingCenterPackages.RemoveRange(center.Packages);
@@ -88,8 +117,8 @@ public class DrivingCenterController : ControllerBase
         var newPackages = dto.Packages.Select(pkg => new DrivingCenterPackage
         {
             DrivingCenterId = center.Id,
-            ServiceType = pkg.ServiceType,
-            DurationType = pkg.DurationType,
+            ServiceType = pkg.ServiceType.Trim(),
+            DurationType = pkg.DurationType.Trim(),
             PriceNpr = pkg.PriceNpr
         }).ToList();
 

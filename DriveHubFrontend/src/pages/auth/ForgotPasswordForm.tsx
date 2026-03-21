@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Field,
@@ -11,7 +12,6 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPassword } from "@/services/auth/authServices.tsx";
 import AuthLayout from "@/components/authentication/AuthLayout";
-import { useState } from "react";
 
 const forgotPasswordSchema = z.object({
     userEmail: z.string().email("Enter a valid email address"),
@@ -31,6 +31,9 @@ export default function ForgotPasswordForm() {
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
 
+    const inputClassName =
+        "!text-white !placeholder:text-slate-200/80 border-white/20 bg-white/10";
+
     const handleForgotPassword = async (data: ForgotPasswordSchemaType) => {
         setIsSubmitting(true);
         setStatusMessage("");
@@ -38,9 +41,7 @@ export default function ForgotPasswordForm() {
 
         try {
             const response = await forgotPassword(data.userEmail);
-            setStatusMessage(
-                response.message || "If an account with that email exists, a reset link has been sent."
-            );
+            setStatusMessage(response.message || "Password reset link sent.");
             setStatusType("success");
             form.reset();
         } catch (error: any) {
@@ -60,15 +61,22 @@ export default function ForgotPasswordForm() {
             title="Forgot Password"
             description="Enter your email to receive a password reset link"
         >
-            <form onSubmit={form.handleSubmit(handleForgotPassword)}>
+            <form onSubmit={form.handleSubmit(handleForgotPassword)} autoComplete="on">
                 <FieldGroup>
                     <Controller
                         control={form.control}
                         name="userEmail"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel>Email</FieldLabel>
-                                <Input {...field} type="email" placeholder="email@example.com" />
+                                <FieldLabel className="!text-white">Email</FieldLabel>
+                                <Input
+                                    {...field}
+                                    type="email"
+                                    name="email"
+                                    autoComplete="email"
+                                    placeholder="email@example.com"
+                                    className={inputClassName}
+                                />
                                 {fieldState.error && <FieldError errors={[fieldState.error]} />}
                             </Field>
                         )}
@@ -76,18 +84,22 @@ export default function ForgotPasswordForm() {
 
                     {statusMessage && (
                         <div
-                            className={`rounded-md border px-3 py-2 text-sm ${
+                            className={`rounded-md border px-3 py-2 text-sm whitespace-pre-line ${
                                 statusType === "success"
-                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-100"
+                                    : "border-red-500/30 bg-red-500/10 text-red-100"
                             }`}
                         >
                             {statusMessage}
                         </div>
                     )}
-                    
+
                     <Field>
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full !text-white bg-[#3B82F6] hover:bg-[#2563EB]"
+                        >
                             {isSubmitting ? "Sending..." : "Send Reset Link"}
                         </Button>
                     </Field>

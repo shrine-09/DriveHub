@@ -18,9 +18,7 @@ import AuthLayout from "@/components/authentication/AuthLayout";
 
 const loginSchema = z.object({
     userEmail: z.string().email("Enter a valid email address"),
-    userPassword: z
-        .string()
-        .min(8, "Password must be at least 8 characters"),
+    userPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type LoginSchemaType = z.infer<typeof loginSchema>;
@@ -41,6 +39,9 @@ export function LoginForm() {
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
 
+    const inputClassName =
+        "border-white/20 bg-white/10 text-white placeholder:text-slate-200/80";
+
     const handleLogin = async (data: LoginSchemaType) => {
         setIsSubmitting(true);
         setStatusMessage("");
@@ -48,18 +49,23 @@ export function LoginForm() {
 
         try {
             const response = await loginUser(data.userEmail, data.userPassword);
-            const { token, refreshToken, role, name, email, mustChangePassword, isProfileComplete } = response;
+            const {
+                token,
+                refreshToken,
+                role,
+                name,
+                email,
+                mustChangePassword,
+                isProfileComplete,
+            } = response;
 
             localStorage.setItem("token", token);
             localStorage.setItem("refreshToken", refreshToken);
             localStorage.setItem("role", role);
             localStorage.setItem("name", name);
             localStorage.setItem("email", email);
+            localStorage.setItem("mustChangePassword", String(mustChangePassword));
             localStorage.setItem("isProfileComplete", String(isProfileComplete));
-            localStorage.setItem(
-                "mustChangePassword",
-                String(mustChangePassword)
-            );
 
             if (mustChangePassword) {
                 navigate("/change-password");
@@ -95,12 +101,16 @@ export function LoginForm() {
     return (
         <AuthLayout
             title="Log in to your account"
+            description="Access your DriveHub account securely"
         >
-            <form onSubmit={form.handleSubmit(handleLogin)}>
+            <form onSubmit={form.handleSubmit(handleLogin)} autoComplete="on">
                 <FieldGroup>
-                    <div className="text-center text-sm text-muted-foreground">
+                    <div className="text-center text-sm text-slate-100/85">
                         Don&apos;t have an account?{" "}
-                        <Link to="/register" className="cursor-pointer underline">
+                        <Link
+                            to="/register"
+                            className="font-medium text-white underline underline-offset-4"
+                        >
                             Sign up
                         </Link>
                     </div>
@@ -110,11 +120,14 @@ export function LoginForm() {
                         name="userEmail"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel>Email</FieldLabel>
+                                <FieldLabel className="text-white">Email</FieldLabel>
                                 <Input
                                     {...field}
                                     type="email"
+                                    name="email"
+                                    autoComplete="email"
                                     placeholder="email@example.com"
+                                    className={inputClassName}
                                 />
                                 {fieldState.error && (
                                     <FieldError errors={[fieldState.error]} />
@@ -128,18 +141,21 @@ export function LoginForm() {
                         name="userPassword"
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel>Password</FieldLabel>
+                                <FieldLabel className="text-white">Password</FieldLabel>
                                 <div className="relative">
                                     <Input
                                         {...field}
                                         type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        autoComplete="current-password"
                                         placeholder="********"
+                                        className={`${inputClassName} pr-10`}
                                     />
                                     <Button
                                         type="button"
                                         size="icon"
                                         variant="ghost"
-                                        className="absolute w-8 h-8 right-1 top-1/2 -translate-y-1/2"
+                                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-200 hover:bg-transparent hover:text-white"
                                         onClick={() => setShowPassword((prev) => !prev)}
                                     >
                                         {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -156,8 +172,8 @@ export function LoginForm() {
                         <div
                             className={`rounded-md border px-3 py-2 text-sm ${
                                 statusType === "success"
-                                    ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
-                                    : "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                                    ? "border-green-500/30 bg-green-500/10 text-green-100"
+                                    : "border-red-500/30 bg-red-500/10 text-red-100"
                             }`}
                         >
                             {statusMessage}
@@ -165,15 +181,19 @@ export function LoginForm() {
                     )}
 
                     <Field>
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
+                        >
                             {isSubmitting ? "Logging in..." : "Login"}
                         </Button>
                     </Field>
 
-                    <FieldDescription className="text-center">
+                    <FieldDescription className="text-center text-slate-100/85">
                         <Link
                             to="/forgot-password"
-                            className="cursor-pointer hover:underline"
+                            className="font-medium text-white underline underline-offset-4"
                         >
                             Forgot password?
                         </Link>

@@ -37,6 +37,14 @@ export default function DrivingCenterSetupProfilePage() {
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
 
+    const parsedLatitude = latitude ? Number(latitude) : null;
+    const parsedLongitude = longitude ? Number(longitude) : null;
+
+    const handleMapLocationChange = (lat: number, lng: number) => {
+        setLatitude(lat.toFixed(6));
+        setLongitude(lng.toFixed(6));
+    };
+
     const updatePackage = (
         index: number,
         field: keyof PackageItem,
@@ -58,10 +66,99 @@ export default function DrivingCenterSetupProfilePage() {
         setPackages((prev) => prev.filter((_, i) => i !== index));
     };
 
+    const validateForm = () => {
+        if (!address.trim()) {
+            setStatusMessage("Address is required.");
+            setStatusType("error");
+            return false;
+        }
+
+        if (!district.trim()) {
+            setStatusMessage("District is required.");
+            setStatusType("error");
+            return false;
+        }
+
+        if (!municipality.trim()) {
+            setStatusMessage("Municipality is required.");
+            setStatusType("error");
+            return false;
+        }
+
+        if (!latitude.trim() || !longitude.trim()) {
+            setStatusMessage("Latitude and longitude are required.");
+            setStatusType("error");
+            return false;
+        }
+
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+
+        if (Number.isNaN(lat) || lat < -90 || lat > 90) {
+            setStatusMessage("Latitude must be a valid number between -90 and 90.");
+            setStatusType("error");
+            return false;
+        }
+
+        if (Number.isNaN(lng) || lng < -180 || lng > 180) {
+            setStatusMessage("Longitude must be a valid number between -180 and 180.");
+            setStatusType("error");
+            return false;
+        }
+
+        const validPackages = packages.filter(
+            (pkg) =>
+                pkg.serviceType.trim() !== "" &&
+                pkg.durationType.trim() !== "" &&
+                pkg.priceNpr.trim() !== ""
+        );
+
+        if (validPackages.length === 0) {
+            setStatusMessage("At least one service package is required.");
+            setStatusType("error");
+            return false;
+        }
+
+        for (const pkg of packages) {
+            const hasAnyValue =
+                pkg.serviceType.trim() !== "" ||
+                pkg.durationType.trim() !== "" ||
+                pkg.priceNpr.trim() !== "";
+
+            const isComplete =
+                pkg.serviceType.trim() !== "" &&
+                pkg.durationType.trim() !== "" &&
+                pkg.priceNpr.trim() !== "";
+
+            if (hasAnyValue && !isComplete) {
+                setStatusMessage(
+                    "Each service row must have service type, duration, and price."
+                );
+                setStatusType("error");
+                return false;
+            }
+
+            if (isComplete) {
+                const price = Number(pkg.priceNpr);
+
+                if (Number.isNaN(price) || price <= 0) {
+                    setStatusMessage("Each service price must be greater than 0.");
+                    setStatusType("error");
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+
     const handleSubmit = async () => {
-        setIsSubmitting(true);
         setStatusMessage("");
         setStatusType("");
+
+        if (!validateForm()) return;
+
+        setIsSubmitting(true);
 
         try {
             const filteredPackages = packages
@@ -78,12 +175,12 @@ export default function DrivingCenterSetupProfilePage() {
                 }));
 
             await setupDrivingCenterProfile({
-                address,
-                district,
-                municipality,
-                latitude: latitude ? Number(latitude) : null,
-                longitude: longitude ? Number(longitude) : null,
-                description,
+                address: address.trim(),
+                district: district.trim(),
+                municipality: municipality.trim(),
+                latitude: Number(latitude),
+                longitude: Number(longitude),
+                description: description.trim(),
                 packages: filteredPackages,
             });
 
@@ -95,21 +192,20 @@ export default function DrivingCenterSetupProfilePage() {
                 navigate("/driving-center/dashboard");
             }, 1200);
         } catch (error: any) {
-            setStatusMessage(
-                error.response?.data?.message || "Failed to save driving center profile."
-            );
+            if (error.response?.data?.message) {
+                setStatusMessage(error.response.data.message);
+            } else if (error.response?.data?.errors) {
+                const messages = Object.values(error.response.data.errors)
+                    .flat()
+                    .join("\n");
+                setStatusMessage(messages);
+            } else {
+                setStatusMessage("Failed to save driving center profile.");
+            }
             setStatusType("error");
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const parsedLatitude = latitude ? Number(latitude) : null;
-    const parsedLongitude = longitude ? Number(longitude) : null;
-
-    const handleMapLocationChange = (lat: number, lng: number) => {
-        setLatitude(lat.toFixed(6));
-        setLongitude(lng.toFixed(6));
     };
 
     return (
@@ -132,7 +228,7 @@ export default function DrivingCenterSetupProfilePage() {
 
                 {statusMessage && (
                     <div
-                        className={`rounded-md border px-4 py-3 text-sm ${
+                        className={`rounded-md border px-4 py-3 text-sm whitespace-pre-line ${
                             statusType === "success"
                                 ? "border-green-500/30 bg-green-500/10 text-green-700"
                                 : "border-red-500/30 bg-red-500/10 text-red-700"
@@ -219,7 +315,8 @@ export default function DrivingCenterSetupProfilePage() {
                                 Pick your location on the map
                             </p>
                             <p className="text-sm text-slate-500">
-                                Click anywhere on the map to automatically fill latitude and longitude.
+                                Click anywhere on the map to automatically fill latitude and
+                                longitude.
                             </p>
                         </div>
 
