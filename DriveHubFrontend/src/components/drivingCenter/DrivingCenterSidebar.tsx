@@ -8,6 +8,17 @@ import {
     LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const mainNavItems = [
     {
@@ -46,9 +57,6 @@ export default function DrivingCenterSidebar() {
     const name = localStorage.getItem("name") || "Driving Center";
 
     const handleLogout = () => {
-        const confirmed = window.confirm("Are you sure you want to logout?");
-        if (!confirmed) return;
-
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("role");
@@ -125,14 +133,38 @@ export default function DrivingCenterSidebar() {
             </nav>
 
             <div className="border-t border-slate-200 p-4">
-                <Button
-                    variant="outline"
-                    onClick={handleLogout}
-                    className="w-full cursor-pointer justify-start border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                >
-                    <LogOut className="mr-2 size-4" />
-                    Logout
-                </Button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className="w-full cursor-pointer justify-start border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                        >
+                            <LogOut className="mr-2 size-4" />
+                            Logout
+                        </Button>
+                    </AlertDialogTrigger>
+
+                    <AlertDialogContent className="border-slate-200 bg-white text-slate-900">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Logout from DriveHub?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-600">
+                                You will be signed out of your driving center account.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+
+                        <AlertDialogFooter>
+                            <AlertDialogCancel className="cursor-pointer">
+                                Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleLogout}
+                                className="cursor-pointer bg-red-600 text-white hover:bg-red-700"
+                            >
+                                Yes, Logout
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </aside>
     );
