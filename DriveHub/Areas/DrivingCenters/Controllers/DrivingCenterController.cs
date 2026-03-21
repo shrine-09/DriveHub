@@ -5,6 +5,8 @@ using DriveHub.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace DriveHub.Areas.DrivingCenters.Controllers;
 
@@ -153,5 +155,161 @@ public class DrivingCenterController : ControllerBase
             center.Municipality,
             packagesCount = center.Packages.Count
         });
+    }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpGet("pending-bookings")]
+    public async Task<IActionResult> GetPendingBookings()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        var bookings = await _context.Bookings
+            .Include(b => b.User)
+            .Where(b => b.DrivingCenterId == center.Id && b.Status == "PendingStart")
+            .OrderByDescending(b => b.CreatedAt)
+            .Select(b => new
+            {
+                b.BookingId,
+                b.ServiceType,
+                b.DurationType,
+                b.PriceNpr,
+                b.StartDate,
+                b.EndDate,
+                b.Status,
+                b.CreatedAt,
+                user = new
+                {
+                    b.User.UserId,
+                    b.User.UserName,
+                    b.User.UserEmail
+                }
+            })
+            .ToListAsync();
+
+        return Ok(bookings);
+    }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpPut("start-training/{bookingId}")]
+    public async Task<IActionResult> StartTraining(int bookingId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        var booking = await _context.Bookings
+            .FirstOrDefaultAsync(b =>
+                b.BookingId == bookingId &&
+                b.DrivingCenterId == center.Id);
+
+        if (booking == null)
+            return NotFound(new { message = "Booking not found." });
+
+        if (booking.Status != "PendingStart")
+            return BadRequest(new { message = "Only pending learners can be started." });
+
+        booking.Status = "Active";
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Training started successfully." });
+    }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpGet("active-learners")]
+    public async Task<IActionResult> GetActiveLearners()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        var learners = await _context.Bookings
+            .Include(b => b.User)
+            .Where(b => b.DrivingCenterId == center.Id && b.Status == "Active")
+            .OrderByDescending(b => b.StartDate)
+            .Select(b => new
+            {
+                b.BookingId,
+                b.ServiceType,
+                b.DurationType,
+                b.PriceNpr,
+                b.StartDate,
+                b.EndDate,
+                b.Status,
+                user = new
+                {
+                    b.User.UserId,
+                    b.User.UserName,
+                    b.User.UserEmail
+                }
+            })
+            .ToListAsync();
+
+        return Ok(learners);
+    }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpGet("inactive-learners")]
+    public async Task<IActionResult> GetInactiveLearners()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        var learners = await _context.Bookings
+            .Include(b => b.User)
+            .Where(b =>
+                b.DrivingCenterId == center.Id &&
+                (b.Status == "Completed" || b.Status == "Cancelled"))
+            .OrderByDescending(b => b.EndDate)
+            .Select(b => new
+            {
+                b.BookingId,
+                b.ServiceType,
+                b.DurationType,
+                b.PriceNpr,
+                b.StartDate,
+                b.EndDate,
+                b.Status,
+                user = new
+                {
+                    b.User.UserId,
+                    b.User.UserName,
+                    b.User.UserEmail
+                }
+            })
+            .ToListAsync();
+
+        return Ok(learners);
     }
 }

@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography;
 using DriveHub.Services;
 using System.Security.Cryptography;
+using System.Security.Claims;
+using DriveHub.Areas.Users.DTOs;
+using Microsoft.EntityFrameworkCore;
 
 namespace DriveHub.Areas.Users.Controllers;
 
@@ -320,5 +323,73 @@ public class UserController : ControllerBase
         }
 
         return Ok(new { message = "Logged out successfully." });
+    }
+    
+    [Authorize(Roles = "User")]
+    [HttpPost("book-driving-center")]
+    public async Task<IActionResult> BookDrivingCenter([FromBody] BookingRequestDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        if (dto.StartDate.Date < DateTime.UtcNow.Date)
+            return BadRequest(new { message = "Start date cannot be in the past." });
+
+        var allowedServices = new[] { "Bike", "Car" };
+        var allowedDurations = new[] { "2Weeks", "1Month" };
+
+        if (!allowedServices.Contains(dto.ServiceType))
+            return BadRequest(new { message = "Invalid service type selected." });
+
+        if (!allowedDurations.Contains(dto.DurationType))
+            return BadRequest(new { message = "Invalid duration type selected." });
+
+        var drivingCenter = await _db.DrivingCenters
+            .Include(dc => dc.Packages)
+            .FirstOrDefaultAsync(dc => dc.Id == dto.DrivingCenterId && dc.IsVerified);
+
+        if (drivingCenter == null)
+            return NotFound(new { message = "Driving center not found." });
+
+        var selectedPackage = drivingCenter.Packages.FirstOrDefault(p =>
+            p.ServiceType == dto.ServiceType &&
+            p.DurationType == dto.DurationType);
+
+        if (selectedPackage == null)
+            return BadRequest(new { message = "Selected package is not offered by this driving center." });
+
+        var endDate = dto.DurationType switch
+        {
+            "2Weeks" => dto.StartDate.Date.AddDays(14),
+            "1Month" => dto.StartDate.Date.AddMonths(1),
+            _ => dto.StartDate.Date
+        };
+
+        var booking = new Booking
+        {
+            UserId = userId,
+            DrivingCenterId = drivingCenter.Id,
+            ServiceType = dto.ServiceType,
+            DurationType = dto.DurationType,
+            PriceNpr = selectedPackage.PriceNpr,
+            StartDate = dto.StartDate.Date,
+            EndDate = endDate,
+            Status = "PendingStart"
+        };
+
+        _db.Bookings.Add(booking);
+        await _db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Booking request submitted successfully.",
+            booking.BookingId,
+            booking.Status
+        });
     }
 }
