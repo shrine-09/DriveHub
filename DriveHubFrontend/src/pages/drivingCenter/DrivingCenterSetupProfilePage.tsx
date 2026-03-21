@@ -11,6 +11,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { setupDrivingCenterProfile } from "@/services/auth/authServices";
+import LocationPickerMap from "@/components/drivingCenter/LocationPickerMap";
 
 type PackageItem = {
     serviceType: string;
@@ -103,6 +104,14 @@ export default function DrivingCenterSetupProfilePage() {
         }
     };
 
+    const parsedLatitude = latitude ? Number(latitude) : null;
+    const parsedLongitude = longitude ? Number(longitude) : null;
+
+    const handleMapLocationChange = (lat: number, lng: number) => {
+        setLatitude(lat.toFixed(6));
+        setLongitude(lng.toFixed(6));
+    };
+
     return (
         <div className="min-h-screen bg-[#F8F7F4] px-6 py-10 text-[#1E293B]">
             <div className="mx-auto max-w-5xl space-y-6">
@@ -189,18 +198,35 @@ export default function DrivingCenterSetupProfilePage() {
                         </CardDescription>
                     </CardHeader>
 
-                    <CardContent className="grid gap-5 md:grid-cols-2">
-                        <Input
-                            className="h-12 text-base text-slate-900 placeholder:text-slate-400"
-                            placeholder="Latitude"
-                            value={latitude}
-                            onChange={(e) => setLatitude(e.target.value)}
-                        />
-                        <Input
-                            className="h-12 text-base text-slate-900 placeholder:text-slate-400"
-                            placeholder="Longitude"
-                            value={longitude}
-                            onChange={(e) => setLongitude(e.target.value)}
+                    <CardContent className="space-y-5">
+                        <div className="grid gap-5 md:grid-cols-2">
+                            <Input
+                                className="h-12 text-base text-slate-900 placeholder:text-slate-400"
+                                placeholder="Latitude"
+                                value={latitude}
+                                onChange={(e) => setLatitude(e.target.value)}
+                            />
+                            <Input
+                                className="h-12 text-base text-slate-900 placeholder:text-slate-400"
+                                placeholder="Longitude"
+                                value={longitude}
+                                onChange={(e) => setLongitude(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-slate-700">
+                                Pick your location on the map
+                            </p>
+                            <p className="text-sm text-slate-500">
+                                Click anywhere on the map to automatically fill latitude and longitude.
+                            </p>
+                        </div>
+
+                        <LocationPickerMap
+                            latitude={parsedLatitude}
+                            longitude={parsedLongitude}
+                            onLocationChange={handleMapLocationChange}
                         />
                     </CardContent>
                 </Card>
