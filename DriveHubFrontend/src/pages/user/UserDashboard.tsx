@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPinned, Search, BadgeCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,40 +12,60 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import UserLayout from "@/components/user/UserLayout";
+import { getPublicDrivingCenters } from "@/services/auth/authServices";
 
-const featuredCenters = [
-    {
-        id: 1,
-        name: "Everest Driving Center",
-        location: "Baneshwor, Kathmandu",
-        type: "Private",
-        verified: true,
-    },
-    {
-        id: 2,
-        name: "Bagmati Driving Academy",
-        location: "Satdobato, Lalitpur",
-        type: "Private",
-        verified: true,
-    },
-    {
-        id: 3,
-        name: "Valley Wheels Training Hub",
-        location: "Chabahil, Kathmandu",
-        type: "Public",
-        verified: false,
-    },
-];
+type DrivingCenterPackage = {
+    id: number;
+    serviceType: string;
+    durationType: string;
+    priceNpr: number;
+};
+
+type PublicDrivingCenter = {
+    id: number;
+    companyName: string;
+    companyEmail: string;
+    companyContact: string;
+    companyType: string;
+    address: string | null;
+    district: string | null;
+    municipality: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    description: string | null;
+    packages: DrivingCenterPackage[];
+};
 
 export default function UserDashboard() {
     const name = localStorage.getItem("name") || "User";
 
+    const [centers, setCenters] = useState<PublicDrivingCenter[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [statusMessage, setStatusMessage] = useState("");
+
+    useEffect(() => {
+        const loadCenters = async () => {
+            try {
+                const data = await getPublicDrivingCenters();
+                setCenters(data.slice(0, 3));
+            } catch (error: any) {
+                setStatusMessage(
+                    error.response?.data?.message || "Failed to load featured driving centers."
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadCenters();
+    }, []);
+
     return (
         <UserLayout>
             <div className="space-y-8">
-                <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#ECA72C]/20 via-slate-950 to-[#F95738]/20 p-6 shadow-sm md:p-10">
+                <section className="overflow-hidden rounded-3xl border border-blue-200/60 bg-gradient-to-br from-[#1E3A5F] via-[#334155] to-[#3B82F6] p-6 text-white shadow-sm md:p-10">
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <Badge className="rounded-full border border-[#ECA72C]/20 bg-[#ECA72C]/10 px-3 py-1 text-[#ffd58a] hover:bg-[#ECA72C]/10">
+                        <Badge className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-slate-100 hover:bg-white/10">
                             Welcome back
                         </Badge>
 
@@ -52,8 +73,8 @@ export default function UserDashboard() {
                             <h1 className="text-3xl font-bold tracking-tight md:text-5xl">
                                 Welcome, {name}
                             </h1>
-                            <p className="max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-                                Discover verified driving centers, compare options, and explore
+                            <p className="max-w-2xl text-sm leading-6 text-slate-100/90 md:text-base">
+                                Discover verified driving centers, compare services, and explore
                                 locations on a map to find the one that fits you best.
                             </p>
                         </div>
@@ -61,7 +82,7 @@ export default function UserDashboard() {
                         <div className="max-w-2xl">
                             <Input
                                 placeholder="Search driving centers by name or location"
-                                className="border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-400 focus-visible:ring-[#F95738]"
+                                className="border-white/20 bg-white/10 text-white placeholder:text-slate-200/80"
                             />
                         </div>
 
@@ -69,7 +90,7 @@ export default function UserDashboard() {
                             <Button
                                 size="lg"
                                 asChild
-                                className="bg-[#F95738] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f26a50]"
+                                className="bg-white text-[#1E3A5F] hover:bg-slate-100"
                             >
                                 <Link to="/user/search">
                                     <Search className="mr-2 size-4" />
@@ -81,7 +102,7 @@ export default function UserDashboard() {
                                 size="lg"
                                 variant="outline"
                                 asChild
-                                className="border-white/10 bg-white/5 text-slate-100 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#ECA72C]/10"
+                                className="border-white/20 bg-white/10 text-white hover:bg-white/20"
                             >
                                 <Link to="/user/map">
                                     <MapPinned className="mr-2 size-4" />
@@ -92,18 +113,24 @@ export default function UserDashboard() {
                     </div>
                 </section>
 
+                {statusMessage && (
+                    <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+                        {statusMessage}
+                    </div>
+                )}
+
                 <section className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                         <div>
-                            <h2 className="text-2xl font-semibold tracking-tight">
+                            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                                 Featured Driving Centers
                             </h2>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-slate-600">
                                 A few highlighted centers to help you get started.
                             </p>
                         </div>
 
-                        <Button variant="ghost" asChild>
+                        <Button variant="ghost" asChild className="text-slate-700 hover:text-[#2563EB]">
                             <Link to="/user/search">
                                 View all
                                 <ArrowRight className="ml-2 size-4" />
@@ -111,49 +138,76 @@ export default function UserDashboard() {
                         </Button>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-3">
-                        {featuredCenters.map((center, index) => (
-                            <Card
-                                key={center.id}
-                                className="group border-white/10 bg-white/[0.03] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#F95738]/20 hover:bg-white/[0.05] hover:shadow-lg animate-in fade-in slide-in-from-bottom-4"
-                                style={{ animationDelay: `${index * 120}ms` }}
-                            >
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <CardTitle className="text-lg">{center.name}</CardTitle>
-                                            <CardDescription className="mt-1">
-                                                {center.location}
-                                            </CardDescription>
-                                        </div>
+                    {isLoading ? (
+                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                            <CardContent className="py-10 text-center text-sm text-slate-500">
+                                Loading featured centers...
+                            </CardContent>
+                        </Card>
+                    ) : centers.length === 0 ? (
+                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                            <CardContent className="py-10 text-center text-sm text-slate-500">
+                                No featured driving centers available right now.
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-4 md:grid-cols-3">
+                            {centers.map((center) => (
+                                <Card
+                                    key={center.id}
+                                    className="border-slate-200/70 bg-white/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                                >
+                                    <CardHeader>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <CardTitle className="text-lg text-slate-900">
+                                                    {center.companyName}
+                                                </CardTitle>
+                                                <CardDescription className="mt-1 text-slate-600">
+                                                    {[center.municipality, center.district]
+                                                        .filter(Boolean)
+                                                        .join(", ") || "Location not available"}
+                                                </CardDescription>
+                                            </div>
 
-                                        {center.verified && (
-                                            <Badge className="gap-1 border border-[#ECA72C]/20 bg-[#ECA72C]/10 text-[#ffd58a] hover:bg-[#ECA72C]/10">
+                                            <Badge className="gap-1 border border-blue-200 bg-blue-50 text-[#2563EB] hover:bg-blue-50">
                                                 <BadgeCheck className="size-3.5" />
                                                 Verified
                                             </Badge>
-                                        )}
-                                    </div>
-                                </CardHeader>
+                                        </div>
+                                    </CardHeader>
 
-                                <CardContent className="space-y-4">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">Type</span>
-                                        <Badge
-                                            variant="secondary"
-                                            className="bg-[#F95738]/10 text-[#ffb29f]"
+                                    <CardContent className="space-y-4">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-slate-600">Type</span>
+                                            <Badge
+                                                variant="secondary"
+                                                className="bg-slate-100 text-slate-700"
+                                            >
+                                                {center.companyType}
+                                            </Badge>
+                                        </div>
+
+                                        <div className="text-sm">
+                                            <p className="text-slate-600">Starting from</p>
+                                            <p className="font-medium text-slate-900">
+                                                {center.packages.length > 0
+                                                    ? `NPR ${Math.min(...center.packages.map((p) => p.priceNpr))}`
+                                                    : "Price not available"}
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            asChild
+                                            className="w-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
                                         >
-                                            {center.type}
-                                        </Badge>
-                                    </div>
-
-                                    <Button className="w-full bg-[#F95738] text-white transition-all duration-300 group-hover:-translate-y-0.5 hover:bg-[#f26a50]">
-                                        View Center
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                                            <Link to={`/user/centers/${center.id}`}>View Center</Link>
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
                 </section>
             </div>
         </UserLayout>

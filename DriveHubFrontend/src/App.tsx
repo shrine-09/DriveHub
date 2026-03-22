@@ -24,6 +24,7 @@ import ActiveLearnersPage from "@/pages/drivingCenter/ActiveLearnersPage.tsx";
 import InactiveLearnersPage from "@/pages/drivingCenter/InactiveLearnersPage.tsx";
 
 
+
 function App() {
     return (
         <BrowserRouter>
@@ -106,6 +107,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["User"]}>
                             <UserProfilePage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/user/search"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserSearchPage />
                         </ProtectedRoute>
                     }
                 />
