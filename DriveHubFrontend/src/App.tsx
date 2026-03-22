@@ -121,6 +121,15 @@ function App() {
                 />
 
                 <Route
+                    path={"/user/map"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserMapPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
                     path={"/user/search"}
                     element={
                         <ProtectedRoute allowedRoles={["User"]}>
