@@ -195,3 +195,11 @@ export const getInactiveLearners = async () => {
 
     return response.data;
 };
+
+export const getPublicDrivingCenters = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/public-list"
+    );
+
+    return response.data;
+};

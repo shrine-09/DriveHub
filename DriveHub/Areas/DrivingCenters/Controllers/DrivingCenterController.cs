@@ -312,4 +312,38 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(learners);
     }
+    
+    [AllowAnonymous]
+    [HttpGet("public-list")]
+    public async Task<IActionResult> GetPublicDrivingCenters()
+    {
+        var centers = await _context.DrivingCenters
+            .Include(dc => dc.Packages)
+            .Where(dc => dc.IsVerified && dc.IsProfileComplete)
+            .OrderBy(dc => dc.CompanyName)
+            .Select(dc => new
+            {
+                dc.Id,
+                dc.CompanyName,
+                dc.CompanyEmail,
+                dc.CompanyContact,
+                dc.CompanyType,
+                dc.Address,
+                dc.District,
+                dc.Municipality,
+                dc.Latitude,
+                dc.Longitude,
+                dc.Description,
+                packages = dc.Packages.Select(p => new
+                {
+                    p.Id,
+                    p.ServiceType,
+                    p.DurationType,
+                    p.PriceNpr
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(centers);
+    }
 }
