@@ -15,6 +15,17 @@ import {
     getDrivingCenterProfile,
     setupDrivingCenterProfile,
 } from "@/services/auth/authServices";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type PackageItem = {
     serviceType: string;
@@ -88,7 +99,8 @@ export default function DrivingCenterProfilePage() {
                 }
             } catch (error: any) {
                 setStatusMessage(
-                    error.response?.data?.message || "Failed to load driving center profile."
+                    error.response?.data?.message ||
+                    "Failed to load driving center profile."
                 );
                 setStatusType("error");
             } finally {
@@ -127,25 +139,25 @@ export default function DrivingCenterProfilePage() {
 
     const validateForm = () => {
         if (!address.trim()) {
-            setStatusMessage("Address is required.");
+            setStatusMessage("Please enter the driving center address.");
             setStatusType("error");
             return false;
         }
 
         if (!district.trim()) {
-            setStatusMessage("District is required.");
+            setStatusMessage("Please enter the district.");
             setStatusType("error");
             return false;
         }
 
         if (!municipality.trim()) {
-            setStatusMessage("Municipality is required.");
+            setStatusMessage("Please enter the municipality.");
             setStatusType("error");
             return false;
         }
 
         if (!latitude.trim() || !longitude.trim()) {
-            setStatusMessage("Latitude and longitude are required.");
+            setStatusMessage("Please provide both latitude and longitude.");
             setStatusType("error");
             return false;
         }
@@ -154,57 +166,63 @@ export default function DrivingCenterProfilePage() {
         const lng = Number(longitude);
 
         if (Number.isNaN(lat) || lat < -90 || lat > 90) {
-            setStatusMessage("Latitude must be a valid number between -90 and 90.");
+            setStatusMessage("Please enter a valid latitude between -90 and 90.");
             setStatusType("error");
             return false;
         }
 
         if (Number.isNaN(lng) || lng < -180 || lng > 180) {
-            setStatusMessage("Longitude must be a valid number between -180 and 180.");
+            setStatusMessage("Please enter a valid longitude between -180 and 180.");
             setStatusType("error");
             return false;
         }
 
-        const validPackages = packages.filter(
+        const completePackages = packages.filter(
             (pkg) =>
                 pkg.serviceType.trim() !== "" &&
                 pkg.durationType.trim() !== "" &&
                 pkg.priceNpr.trim() !== ""
         );
 
-        if (validPackages.length === 0) {
-            setStatusMessage("At least one service package is required.");
+        if (completePackages.length === 0) {
+            setStatusMessage("Please add at least one complete service package.");
             setStatusType("error");
             return false;
         }
 
         for (const pkg of packages) {
-            const hasAnyValue =
-                pkg.serviceType.trim() !== "" ||
-                pkg.durationType.trim() !== "" ||
-                pkg.priceNpr.trim() !== "";
+            const isCompletelyEmpty =
+                pkg.serviceType.trim() === "" &&
+                pkg.durationType.trim() === "" &&
+                pkg.priceNpr.trim() === "";
 
             const isComplete =
                 pkg.serviceType.trim() !== "" &&
                 pkg.durationType.trim() !== "" &&
                 pkg.priceNpr.trim() !== "";
 
-            if (hasAnyValue && !isComplete) {
+            if (isCompletelyEmpty) {
                 setStatusMessage(
-                    "Each service row must have service type, duration, and price."
+                    "Please complete Services or delete unnecessary service rows."
                 );
                 setStatusType("error");
                 return false;
             }
 
-            if (isComplete) {
-                const price = Number(pkg.priceNpr);
+            if (!isComplete) {
+                setStatusMessage(
+                    "Please complete Services or delete unnecessary service rows."
+                );
+                setStatusType("error");
+                return false;
+            }
 
-                if (Number.isNaN(price) || price <= 0) {
-                    setStatusMessage("Each service price must be greater than 0.");
-                    setStatusType("error");
-                    return false;
-                }
+            const price = Number(pkg.priceNpr);
+
+            if (Number.isNaN(price) || price <= 0) {
+                setStatusMessage("Please enter a valid service price greater than 0.");
+                setStatusType("error");
+                return false;
             }
         }
 
@@ -220,18 +238,11 @@ export default function DrivingCenterProfilePage() {
         setIsSubmitting(true);
 
         try {
-            const filteredPackages = packages
-                .filter(
-                    (pkg) =>
-                        pkg.serviceType.trim() !== "" &&
-                        pkg.durationType.trim() !== "" &&
-                        pkg.priceNpr.trim() !== ""
-                )
-                .map((pkg) => ({
-                    serviceType: pkg.serviceType,
-                    durationType: pkg.durationType,
-                    priceNpr: Number(pkg.priceNpr),
-                }));
+            const formattedPackages = packages.map((pkg) => ({
+                serviceType: pkg.serviceType,
+                durationType: pkg.durationType,
+                priceNpr: Number(pkg.priceNpr),
+            }));
 
             const response = await setupDrivingCenterProfile({
                 address: address.trim(),
@@ -240,7 +251,7 @@ export default function DrivingCenterProfilePage() {
                 latitude: Number(latitude),
                 longitude: Number(longitude),
                 description: description.trim(),
-                packages: filteredPackages,
+                packages: formattedPackages,
             });
 
             localStorage.setItem("isProfileComplete", "true");
@@ -267,16 +278,54 @@ export default function DrivingCenterProfilePage() {
         <DrivingCenterLayout>
             <div className="space-y-6">
                 <div className="rounded-3xl border border-blue-200/60 bg-gradient-to-br from-[#1E3A5F] via-[#334155] to-[#3B82F6] p-6 text-white shadow-sm md:p-8">
-                    <div className="space-y-3">
-                        <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm">
-                            Profile Management
-                        </p>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            {isLoading ? "Loading profile..." : profile?.companyName || "Driving Center Profile"}
-                        </h1>
-                        <p className="max-w-2xl text-sm text-slate-100/90">
-                            Update your public center details, map location, services, and pricing.
-                        </p>
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                        <div className="space-y-3">
+                            <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm">
+                                Profile Management
+                            </p>
+                            <h1 className="text-3xl font-bold tracking-tight">
+                                {isLoading
+                                    ? "Loading profile..."
+                                    : profile?.companyName || "Driving Center Profile"}
+                            </h1>
+                            <p className="max-w-2xl text-sm text-slate-100/90">
+                                Update your public center details, map location, services, and
+                                pricing.
+                            </p>
+                        </div>
+
+                        {!isLoading && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button className="bg-white text-[#1E3A5F] hover:bg-slate-100 hover:text-[#1E3A5F]">
+                                        Save Changes
+                                    </Button>
+                                </AlertDialogTrigger>
+
+                                <AlertDialogContent className="border-slate-200 bg-white text-slate-900">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Save profile changes?</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-slate-600">
+                                            Your driving center profile, services, pricing, and
+                                            location details will be updated.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel className="cursor-pointer">
+                                            Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleSave}
+                                            disabled={isSubmitting}
+                                            className="cursor-pointer bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 disabled:text-white"
+                                        >
+                                            {isSubmitting ? "Saving..." : "Yes, Save Changes"}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
                     </div>
                 </div>
 
@@ -302,7 +351,9 @@ export default function DrivingCenterProfilePage() {
                     <>
                         <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                             <CardHeader>
-                                <CardTitle className="text-slate-900">Center Information</CardTitle>
+                                <CardTitle className="text-slate-900">
+                                    Center Information
+                                </CardTitle>
                                 <CardDescription className="text-slate-600">
                                     Basic account-linked information for your center.
                                 </CardDescription>
@@ -333,7 +384,9 @@ export default function DrivingCenterProfilePage() {
 
                         <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                             <CardHeader>
-                                <CardTitle className="text-slate-900">Location & Details</CardTitle>
+                                <CardTitle className="text-slate-900">
+                                    Location & Details
+                                </CardTitle>
                                 <CardDescription className="text-slate-600">
                                     Update the public details users will see.
                                 </CardDescription>
@@ -403,7 +456,8 @@ export default function DrivingCenterProfilePage() {
                                         Pick your location on the map
                                     </p>
                                     <p className="text-sm text-slate-500">
-                                        Click anywhere on the map to automatically fill latitude and longitude.
+                                        Click anywhere on the map to automatically fill latitude and
+                                        longitude.
                                     </p>
                                 </div>
 
@@ -417,7 +471,9 @@ export default function DrivingCenterProfilePage() {
 
                         <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                             <CardHeader>
-                                <CardTitle className="text-slate-900">Services & Pricing</CardTitle>
+                                <CardTitle className="text-slate-900">
+                                    Services & Pricing
+                                </CardTitle>
                                 <CardDescription className="text-slate-600">
                                     Update the services you offer and their prices in NPR.
                                 </CardDescription>
@@ -486,7 +542,7 @@ export default function DrivingCenterProfilePage() {
                                                 <Button
                                                     type="button"
                                                     variant="outline"
-                                                    className="h-12 w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                    className="h-12 w-full border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
                                                     onClick={() => removeServiceCard(index)}
                                                     disabled={packages.length === 1}
                                                 >
@@ -502,23 +558,13 @@ export default function DrivingCenterProfilePage() {
                                     type="button"
                                     variant="outline"
                                     onClick={addServiceCard}
-                                    className="h-11 border-blue-200 bg-blue-50 text-[#1E3A5F] hover:bg-blue-100"
+                                    className="h-11 border-blue-200 bg-blue-50 text-[#1E3A5F] hover:bg-blue-100 hover:text-[#1E3A5F]"
                                 >
                                     <Plus className="mr-2 size-4" />
                                     Add Service
                                 </Button>
                             </CardContent>
                         </Card>
-
-                        <div className="flex justify-end">
-                            <Button
-                                onClick={handleSave}
-                                disabled={isSubmitting}
-                                className="h-12 bg-[#3B82F6] px-6 text-white hover:bg-[#2563EB]"
-                            >
-                                {isSubmitting ? "Saving..." : "Save Changes"}
-                            </Button>
-                        </div>
                     </>
                 )}
             </div>

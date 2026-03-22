@@ -68,25 +68,25 @@ export default function DrivingCenterSetupProfilePage() {
 
     const validateForm = () => {
         if (!address.trim()) {
-            setStatusMessage("Address is required.");
+            setStatusMessage("Please enter the driving center address.");
             setStatusType("error");
             return false;
         }
 
         if (!district.trim()) {
-            setStatusMessage("District is required.");
+            setStatusMessage("Please enter the district.");
             setStatusType("error");
             return false;
         }
 
         if (!municipality.trim()) {
-            setStatusMessage("Municipality is required.");
+            setStatusMessage("Please enter the municipality.");
             setStatusType("error");
             return false;
         }
 
         if (!latitude.trim() || !longitude.trim()) {
-            setStatusMessage("Latitude and longitude are required.");
+            setStatusMessage("Please provide both latitude and longitude.");
             setStatusType("error");
             return false;
         }
@@ -95,57 +95,63 @@ export default function DrivingCenterSetupProfilePage() {
         const lng = Number(longitude);
 
         if (Number.isNaN(lat) || lat < -90 || lat > 90) {
-            setStatusMessage("Latitude must be a valid number between -90 and 90.");
+            setStatusMessage("Please enter a valid latitude between -90 and 90.");
             setStatusType("error");
             return false;
         }
 
         if (Number.isNaN(lng) || lng < -180 || lng > 180) {
-            setStatusMessage("Longitude must be a valid number between -180 and 180.");
+            setStatusMessage("Please enter a valid longitude between -180 and 180.");
             setStatusType("error");
             return false;
         }
 
-        const validPackages = packages.filter(
+        const completePackages = packages.filter(
             (pkg) =>
                 pkg.serviceType.trim() !== "" &&
                 pkg.durationType.trim() !== "" &&
                 pkg.priceNpr.trim() !== ""
         );
 
-        if (validPackages.length === 0) {
-            setStatusMessage("At least one service package is required.");
+        if (completePackages.length === 0) {
+            setStatusMessage("Please add at least one complete service package.");
             setStatusType("error");
             return false;
         }
 
         for (const pkg of packages) {
-            const hasAnyValue =
-                pkg.serviceType.trim() !== "" ||
-                pkg.durationType.trim() !== "" ||
-                pkg.priceNpr.trim() !== "";
+            const isCompletelyEmpty =
+                pkg.serviceType.trim() === "" &&
+                pkg.durationType.trim() === "" &&
+                pkg.priceNpr.trim() === "";
 
             const isComplete =
                 pkg.serviceType.trim() !== "" &&
                 pkg.durationType.trim() !== "" &&
                 pkg.priceNpr.trim() !== "";
 
-            if (hasAnyValue && !isComplete) {
+            if (isCompletelyEmpty) {
                 setStatusMessage(
-                    "Each service row must have service type, duration, and price."
+                    "Please complete Services or delete unnecessary service rows."
                 );
                 setStatusType("error");
                 return false;
             }
 
-            if (isComplete) {
-                const price = Number(pkg.priceNpr);
+            if (!isComplete) {
+                setStatusMessage(
+                    "Please complete Services or delete unnecessary service rows."
+                );
+                setStatusType("error");
+                return false;
+            }
 
-                if (Number.isNaN(price) || price <= 0) {
-                    setStatusMessage("Each service price must be greater than 0.");
-                    setStatusType("error");
-                    return false;
-                }
+            const price = Number(pkg.priceNpr);
+
+            if (Number.isNaN(price) || price <= 0) {
+                setStatusMessage("Please enter a valid service price greater than 0.");
+                setStatusType("error");
+                return false;
             }
         }
 
@@ -161,18 +167,11 @@ export default function DrivingCenterSetupProfilePage() {
         setIsSubmitting(true);
 
         try {
-            const filteredPackages = packages
-                .filter(
-                    (pkg) =>
-                        pkg.serviceType.trim() !== "" &&
-                        pkg.durationType.trim() !== "" &&
-                        pkg.priceNpr.trim() !== ""
-                )
-                .map((pkg) => ({
-                    serviceType: pkg.serviceType,
-                    durationType: pkg.durationType,
-                    priceNpr: Number(pkg.priceNpr),
-                }));
+            const formattedPackages = packages.map((pkg) => ({
+                serviceType: pkg.serviceType,
+                durationType: pkg.durationType,
+                priceNpr: Number(pkg.priceNpr),
+            }));
 
             await setupDrivingCenterProfile({
                 address: address.trim(),
@@ -181,7 +180,7 @@ export default function DrivingCenterSetupProfilePage() {
                 latitude: Number(latitude),
                 longitude: Number(longitude),
                 description: description.trim(),
-                packages: filteredPackages,
+                packages: formattedPackages,
             });
 
             localStorage.setItem("isProfileComplete", "true");
@@ -401,7 +400,7 @@ export default function DrivingCenterSetupProfilePage() {
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            className="h-12 w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                            className="h-12 w-full border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
                                             onClick={() => removeServiceCard(index)}
                                             disabled={packages.length === 1}
                                         >
@@ -417,7 +416,7 @@ export default function DrivingCenterSetupProfilePage() {
                             type="button"
                             variant="outline"
                             onClick={addServiceCard}
-                            className="h-11 border-blue-200 bg-blue-50 text-[#1E3A5F] hover:bg-blue-100"
+                            className="h-11 border-blue-200 bg-blue-50 text-[#1E3A5F] hover:bg-blue-100 hover:text-[#1E3A5F]"
                         >
                             <Plus className="mr-2 size-4" />
                             Add Service
@@ -429,7 +428,7 @@ export default function DrivingCenterSetupProfilePage() {
                     <Button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="h-12 bg-[#3B82F6] px-6 text-white hover:bg-[#2563EB]"
+                        className="h-12 bg-[#3B82F6] px-6 text-white hover:bg-[#2563EB] disabled:bg-slate-200 disabled:text-slate-500"
                     >
                         {isSubmitting ? "Saving..." : "Complete Setup"}
                     </Button>

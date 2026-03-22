@@ -4,12 +4,12 @@ namespace DriveHub.Areas.DrivingCenters.DTOs;
 
 public class DrivingCenterPackageDto
 {
-    [Required]
-    public string ServiceType { get; set; } = string.Empty;   // Bike, Car
+    [Required(ErrorMessage = "Please complete all service details or remove unnecessary service rows.")]
+    public string ServiceType { get; set; } = string.Empty;
 
-    [Required]
-    public string DurationType { get; set; } = string.Empty;  // 2Weeks, 1Month
+    [Required(ErrorMessage = "Please complete all service details or remove unnecessary service rows.")]
+    public string DurationType { get; set; } = string.Empty;
 
-    [Range(1, double.MaxValue, ErrorMessage = "Price must be greater than 0.")]
+    [Range(1, double.MaxValue, ErrorMessage = "Please enter a valid service price greater than 0.")]
     public decimal PriceNpr { get; set; }
 }

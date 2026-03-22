@@ -25,6 +25,7 @@ import InactiveLearnersPage from "@/pages/drivingCenter/InactiveLearnersPage.tsx
 import DrivingCenterDetailsPage from "@/pages/user/DrivingCenterDetailsPage.tsx";
 import MarkAttendancePage from "@/pages/drivingCenter/MarkAttendancePage.tsx";
 import DrivingCenterProfilePage from "@/pages/drivingCenter/DrivingCenterProfilePage.tsx";
+import ReportsPage from "@/pages/drivingCenter/ReportsPage.tsx";
 
 function App() {
     return (
@@ -207,6 +208,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["DrivingCenter"]}>
                             <MarkAttendancePage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/driving-center/reports"}
+                    element={
+                        <ProtectedRoute allowedRoles={["DrivingCenter"]}>
+                            <ReportsPage />
                         </ProtectedRoute>
                     }
                 />
