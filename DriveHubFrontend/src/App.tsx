@@ -22,7 +22,7 @@ import DrivingCenterSetupProfilePage from "@/pages/drivingCenter/DrivingCenterSe
 import NewLearnersPage from "@/pages/drivingCenter/NewLearnersPage.tsx";
 import ActiveLearnersPage from "@/pages/drivingCenter/ActiveLearnersPage.tsx";
 import InactiveLearnersPage from "@/pages/drivingCenter/InactiveLearnersPage.tsx";
-
+import DrivingCenterDetailsPage from "@/pages/user/DrivingCenterDetailsPage.tsx";
 
 
 function App() {
@@ -98,6 +98,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["User"]}>
                             <UserBookingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={"/user/centers/:id"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <DrivingCenterDetailsPage />
                         </ProtectedRoute>
                     }
                 />
