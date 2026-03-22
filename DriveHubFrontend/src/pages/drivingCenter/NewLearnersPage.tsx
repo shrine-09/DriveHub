@@ -1,7 +1,79 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { CalendarDays, Mail, Play, User2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import DrivingCenterLayout from "@/components/drivingCenter/DrivingCenterLayout";
+import {
+    getPendingLearners,
+    startTraining,
+} from "@/services/auth/authServices";
+
+type PendingLearner = {
+    bookingId: number;
+    serviceType: string;
+    durationType: string;
+    priceNpr: number;
+    startDate: string;
+    endDate: string;
+    status: string;
+    createdAt: string;
+    user: {
+        userId: number;
+        userName: string;
+        userEmail: string;
+    };
+};
 
 export default function NewLearnersPage() {
+    const [learners, setLearners] = useState<PendingLearner[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [actionId, setActionId] = useState<number | null>(null);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
+
+    const loadLearners = async () => {
+        try {
+            const data = await getPendingLearners();
+            setLearners(data);
+        } catch (error: any) {
+            setStatusMessage(
+                error.response?.data?.message || "Failed to load new learners."
+            );
+            setStatusType("error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadLearners();
+    }, []);
+
+    const handleStartTraining = async (bookingId: number) => {
+        setActionId(bookingId);
+        setStatusMessage("");
+        setStatusType("");
+
+        try {
+            const response = await startTraining(bookingId);
+            setStatusMessage(response.message || "Training started successfully.");
+            setStatusType("success");
+            setLearners((prev) => prev.filter((item) => item.bookingId !== bookingId));
+        } catch (error: any) {
+            setStatusMessage(
+                error.response?.data?.message || "Failed to start training."
+            );
+            setStatusType("error");
+        } finally {
+            setActionId(null);
+        }
+    };
+
     return (
         <DrivingCenterLayout>
             <div className="space-y-6">
@@ -14,14 +86,110 @@ export default function NewLearnersPage() {
                     </p>
                 </div>
 
-                <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-slate-900">Pending Start</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm text-slate-600">
-                        New learner applications will be shown here.
-                    </CardContent>
-                </Card>
+                {statusMessage && (
+                    <div
+                        className={`rounded-md border px-4 py-3 text-sm ${
+                            statusType === "success"
+                                ? "border-green-500/30 bg-green-500/10 text-green-700"
+                                : "border-red-500/30 bg-red-500/10 text-red-700"
+                        }`}
+                    >
+                        {statusMessage}
+                    </div>
+                )}
+
+                {isLoading ? (
+                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                        <CardContent className="py-10 text-center text-sm text-slate-500">
+                            Loading new learners...
+                        </CardContent>
+                    </Card>
+                ) : learners.length === 0 ? (
+                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                        <CardContent className="py-10 text-center text-sm text-slate-500">
+                            No new learners at the moment.
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        {learners.map((learner) => (
+                            <Card
+                                key={learner.bookingId}
+                                className="border-slate-200/70 bg-white/95 shadow-sm"
+                            >
+                                <CardHeader>
+                                    <CardTitle className="text-lg text-slate-900">
+                                        {learner.user.userName}
+                                    </CardTitle>
+                                </CardHeader>
+
+                                <CardContent className="space-y-4 text-sm">
+                                    <div className="flex items-start gap-3">
+                                        <User2 className="mt-0.5 size-4 text-[#3B82F6]" />
+                                        <div>
+                                            <p className="font-medium text-slate-900">Learner</p>
+                                            <p className="text-slate-600">{learner.user.userName}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <Mail className="mt-0.5 size-4 text-[#3B82F6]" />
+                                        <div>
+                                            <p className="font-medium text-slate-900">Email</p>
+                                            <p className="break-all text-slate-600">
+                                                {learner.user.userEmail}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <p className="font-medium text-slate-900">Service</p>
+                                            <p className="text-slate-600">{learner.serviceType}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="font-medium text-slate-900">Duration</p>
+                                            <p className="text-slate-600">{learner.durationType}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="font-medium text-slate-900">Price</p>
+                                            <p className="text-slate-600">NPR {learner.priceNpr}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="font-medium text-slate-900">Status</p>
+                                            <p className="text-slate-600">{learner.status}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <CalendarDays className="mt-0.5 size-4 text-[#3B82F6]" />
+                                        <div>
+                                            <p className="font-medium text-slate-900">Training Period</p>
+                                            <p className="text-slate-600">
+                                                {new Date(learner.startDate).toLocaleDateString()} —{" "}
+                                                {new Date(learner.endDate).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        onClick={() => handleStartTraining(learner.bookingId)}
+                                        disabled={actionId === learner.bookingId}
+                                        className="w-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
+                                    >
+                                        <Play className="mr-2 size-4" />
+                                        {actionId === learner.bookingId
+                                            ? "Starting..."
+                                            : "Start Training"}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
         </DrivingCenterLayout>
     );
