@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Booking> Bookings { get; set; }
+    public DbSet<TrainingSessionRecord> TrainingSessionRecords { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -79,5 +80,11 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(b => b.DrivingCenterId)
             .OnDelete(DeleteBehavior.Restrict);
+        
+        modelBuilder.Entity<TrainingSessionRecord>()
+            .HasOne(tsr => tsr.Booking)
+            .WithMany()
+            .HasForeignKey(tsr => tsr.BookingId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

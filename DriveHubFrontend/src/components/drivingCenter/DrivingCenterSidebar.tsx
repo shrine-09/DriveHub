@@ -5,6 +5,7 @@ import {
     Users,
     UserX,
     Settings,
+    ClipboardCheck,
     LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,11 @@ const mainNavItems = [
         label: "Inactive Learners",
         path: "/driving-center/inactive-learners",
         icon: UserX,
+    },
+    {
+        label: "Mark Attendance",
+        path: "/driving-center/mark-attendance",
+        icon: ClipboardCheck,
     },
 ];
 
@@ -87,6 +93,7 @@ export default function DrivingCenterSidebar() {
             <nav className="flex-1 px-3">
                 <div className="space-y-1">
                     {mainNavItems.map((item) => {
+                        
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
 

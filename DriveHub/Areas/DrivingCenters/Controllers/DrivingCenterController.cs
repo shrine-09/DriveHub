@@ -346,4 +346,149 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(centers);
     }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpPost("record-training-session")]
+    public async Task<IActionResult> RecordTrainingSession([FromBody] TrainingSessionRecordDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        var booking = await _context.Bookings
+            .FirstOrDefaultAsync(b =>
+                b.BookingId == dto.BookingId &&
+                b.DrivingCenterId == center.Id);
+
+        if (booking == null)
+            return NotFound(new { message = "Learner booking not found." });
+
+        if (booking.Status != "Active")
+            return BadRequest(new { message = "Only active learners can be rated." });
+
+        var sessionDate = dto.Date.Date;
+
+        if (sessionDate > DateTime.UtcNow.Date)
+            return BadRequest(new { message = "Session date cannot be in the future." });
+
+        if (dto.IsPresent)
+        {
+            if (dto.VehicleControlRating is null ||
+                dto.TrafficAwarenessRating is null ||
+                dto.ConfidenceDisciplineRating is null)
+            {
+                return BadRequest(new
+                {
+                    message = "All three skill ratings are required when the learner is present."
+                });
+            }
+        }
+        else
+        {
+            dto.VehicleControlRating = null;
+            dto.TrafficAwarenessRating = null;
+            dto.ConfidenceDisciplineRating = null;
+        }
+
+        var existingRecord = await _context.TrainingSessionRecords
+            .FirstOrDefaultAsync(r =>
+                r.BookingId == dto.BookingId &&
+                r.Date.Date == sessionDate);
+
+        if (existingRecord == null)
+        {
+            var newRecord = new TrainingSessionRecord
+            {
+                BookingId = dto.BookingId,
+                Date = sessionDate,
+                IsPresent = dto.IsPresent,
+                VehicleControlRating = dto.VehicleControlRating,
+                TrafficAwarenessRating = dto.TrafficAwarenessRating,
+                ConfidenceDisciplineRating = dto.ConfidenceDisciplineRating,
+                Remarks = string.IsNullOrWhiteSpace(dto.Remarks) ? null : dto.Remarks.Trim()
+            };
+
+            _context.TrainingSessionRecords.Add(newRecord);
+        }
+        else
+        {
+            existingRecord.IsPresent = dto.IsPresent;
+            existingRecord.VehicleControlRating = dto.VehicleControlRating;
+            existingRecord.TrafficAwarenessRating = dto.TrafficAwarenessRating;
+            existingRecord.ConfidenceDisciplineRating = dto.ConfidenceDisciplineRating;
+            existingRecord.Remarks = string.IsNullOrWhiteSpace(dto.Remarks)
+                ? null
+                : dto.Remarks.Trim();
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Training session recorded successfully." });
+    }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpGet("learner-session-history/{bookingId}")]
+    public async Task<IActionResult> GetLearnerSessionHistory(int bookingId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        var booking = await _context.Bookings
+            .Include(b => b.User)
+            .FirstOrDefaultAsync(b =>
+                b.BookingId == bookingId &&
+                b.DrivingCenterId == center.Id);
+
+        if (booking == null)
+            return NotFound(new { message = "Learner booking not found." });
+
+        var records = await _context.TrainingSessionRecords
+            .Where(r => r.BookingId == bookingId)
+            .OrderByDescending(r => r.Date)
+            .Select(r => new
+            {
+                r.TrainingSessionRecordId,
+                r.Date,
+                r.IsPresent,
+                r.VehicleControlRating,
+                r.TrafficAwarenessRating,
+                r.ConfidenceDisciplineRating,
+                r.Remarks
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            booking.BookingId,
+            learner = new
+            {
+                booking.User.UserId,
+                booking.User.UserName,
+                booking.User.UserEmail
+            },
+            booking.ServiceType,
+            booking.DurationType,
+            booking.StartDate,
+            booking.EndDate,
+            records
+        });
+    }
 }

@@ -211,3 +211,28 @@ export const getMyBookings = async () => {
 
     return response.data;
 };
+
+export const recordTrainingSession = async (payload: {
+    bookingId: number;
+    date: string;
+    isPresent: boolean;
+    vehicleControlRating: number | null;
+    trafficAwarenessRating: number | null;
+    confidenceDisciplineRating: number | null;
+    remarks: string;
+}) => {
+    const response = await apiClient.post(
+        "https://localhost:7234/api/drivingcenters/DrivingCenter/record-training-session",
+        payload
+    );
+
+    return response.data;
+};
+
+export const getLearnerSessionHistory = async (bookingId: number) => {
+    const response = await apiClient.get(
+        `https://localhost:7234/api/drivingcenters/DrivingCenter/learner-session-history/${bookingId}`
+    );
+
+    return response.data;
+};
