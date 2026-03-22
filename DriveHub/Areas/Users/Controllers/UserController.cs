@@ -392,4 +392,43 @@ public class UserController : ControllerBase
             booking.Status
         });
     }
+    
+    [Authorize(Roles = "User")]
+    [HttpGet("my-bookings")]
+    public async Task<IActionResult> GetMyBookings()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var bookings = await _db.Bookings
+            .Include(b => b.DrivingCenter)
+            .Where(b => b.UserId == userId)
+            .OrderByDescending(b => b.CreatedAt)
+            .Select(b => new
+            {
+                b.BookingId,
+                b.ServiceType,
+                b.DurationType,
+                b.PriceNpr,
+                b.StartDate,
+                b.EndDate,
+                b.Status,
+                b.CreatedAt,
+                drivingCenter = new
+                {
+                    b.DrivingCenter.Id,
+                    b.DrivingCenter.CompanyName,
+                    b.DrivingCenter.CompanyContact,
+                    b.DrivingCenter.CompanyEmail,
+                    b.DrivingCenter.Address,
+                    b.DrivingCenter.District,
+                    b.DrivingCenter.Municipality
+                }
+            })
+            .ToListAsync();
+
+        return Ok(bookings);
+    }
 }

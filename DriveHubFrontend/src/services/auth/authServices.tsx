@@ -203,3 +203,11 @@ export const getPublicDrivingCenters = async () => {
 
     return response.data;
 };
+
+export const getMyBookings = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/users/User/my-bookings"
+    );
+
+    return response.data;
+};

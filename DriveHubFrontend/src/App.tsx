@@ -130,6 +130,15 @@ function App() {
                 />
 
                 <Route
+                    path={"/user/bookings"}
+                    element={
+                        <ProtectedRoute allowedRoles={["User"]}>
+                            <UserBookingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
                     path={"/user/search"}
                     element={
                         <ProtectedRoute allowedRoles={["User"]}>
