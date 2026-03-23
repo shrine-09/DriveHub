@@ -145,8 +145,33 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
-        
+
         await UpdateExpiredBookingsAsync(center.Id);
+
+        var newLearnersCount = await _context.Bookings.CountAsync(b =>
+            b.DrivingCenterId == center.Id &&
+            b.Status == "PendingStart");
+
+        var activeLearnersCount = await _context.Bookings.CountAsync(b =>
+            b.DrivingCenterId == center.Id &&
+            b.Status == "Active");
+
+        var inactiveLearnersCount = await _context.Bookings.CountAsync(b =>
+            b.DrivingCenterId == center.Id &&
+            (b.Status == "Completed" || b.Status == "Cancelled"));
+        
+        var today = DateTime.UtcNow.Date;
+
+        var todaysRecords = await _context.TrainingSessionRecords
+            .Include(r => r.Booking)
+            .Where(r =>
+                r.Booking.DrivingCenterId == center.Id &&
+                r.Date.Date == today)
+            .ToListAsync();
+
+        var todaysSessionsCount = todaysRecords.Count;
+        var todaysPresentCount = todaysRecords.Count(r => r.IsPresent);
+        var todaysAbsentCount = todaysRecords.Count(r => !r.IsPresent);
 
         return Ok(new
         {
@@ -155,7 +180,13 @@ public class DrivingCenterController : ControllerBase
             center.Address,
             center.District,
             center.Municipality,
-            packagesCount = center.Packages.Count
+            packagesCount = center.Packages.Count,
+            newLearnersCount,
+            activeLearnersCount,
+            inactiveLearnersCount,
+            todaysSessionsCount,
+            todaysPresentCount,
+            todaysAbsentCount
         });
     }
     

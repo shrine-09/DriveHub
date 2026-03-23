@@ -4,7 +4,6 @@ import {
     MapPinned,
     Package2,
     CircleCheckBig,
-    Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +23,12 @@ type DrivingCenterDashboardSummary = {
     district: string | null;
     municipality: string | null;
     packagesCount: number;
+    newLearnersCount: number;
+    activeLearnersCount: number;
+    inactiveLearnersCount: number;
+    todaysSessionsCount: number;
+    todaysPresentCount: number;
+    todaysAbsentCount: number;
 };
 
 export default function DrivingCenterDashboard() {
@@ -72,7 +77,7 @@ export default function DrivingCenterDashboard() {
                         <div>
                             <Button
                                 asChild
-                                className="bg-white text-[#1E3A5F] hover:bg-slate-100"
+                                className="bg-white text-[#1E3A5F] hover:bg-slate-100 hover:text-[#1E3A5F]"
                             >
                                 <Link to="/driving-center/profile">Manage Profile</Link>
                             </Button>
@@ -94,7 +99,7 @@ export default function DrivingCenterDashboard() {
                     </Card>
                 ) : summary ? (
                     <>
-                        <section className="grid gap-4 md:grid-cols-3">
+                        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                             <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                                 <CardHeader className="pb-2">
                                     <CardTitle className="flex items-center gap-2 text-base text-slate-900">
@@ -131,17 +136,32 @@ export default function DrivingCenterDashboard() {
 
                             <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="flex items-center gap-2 text-base text-slate-900">
-                                        <Building2 className="size-4 text-[#3B82F6]" />
-                                        District
+                                    <CardTitle className="text-base text-slate-900">
+                                        New Learners
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-2xl font-bold text-slate-900">
-                                        {summary.district || "Not set"}
+                                        {summary.newLearnersCount}
                                     </p>
                                     <p className="mt-1 text-sm text-slate-600">
-                                        Saved location district
+                                        Applied but not started yet
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base text-slate-900">
+                                        Active Learners
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold text-slate-900">
+                                        {summary.activeLearnersCount}
+                                    </p>
+                                    <p className="mt-1 text-sm text-slate-600">
+                                        Currently in training
                                     </p>
                                 </CardContent>
                             </Card>
@@ -168,6 +188,72 @@ export default function DrivingCenterDashboard() {
                                                     .join(", ") || "No municipality/district saved"}
                                             </p>
                                         </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </section>
+
+                        <section>
+                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-slate-900">Learner Summary</CardTitle>
+                                    <CardDescription className="text-slate-600">
+                                        Quick overview of learner activity in your center.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid gap-4 md:grid-cols-3">
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                                        <p className="text-sm text-slate-500">New Learners</p>
+                                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                                            {summary.newLearnersCount}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                                        <p className="text-sm text-slate-500">Active Learners</p>
+                                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                                            {summary.activeLearnersCount}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                                        <p className="text-sm text-slate-500">Inactive Learners</p>
+                                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                                            {summary.inactiveLearnersCount}
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </section>
+
+                        <section>
+                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-slate-900">Today’s Attendance</CardTitle>
+                                    <CardDescription className="text-slate-600">
+                                        Summary of attendance records marked for today.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid gap-4 md:grid-cols-3">
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                                        <p className="text-sm text-slate-500">Sessions Marked</p>
+                                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                                            {summary.todaysSessionsCount}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                                        <p className="text-sm text-slate-500">Present Today</p>
+                                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                                            {summary.todaysPresentCount}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                                        <p className="text-sm text-slate-500">Absent Today</p>
+                                        <p className="mt-1 text-2xl font-bold text-slate-900">
+                                            {summary.todaysAbsentCount}
+                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>
