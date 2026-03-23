@@ -145,6 +145,8 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
+        
+        await UpdateExpiredBookingsAsync(center.Id);
 
         return Ok(new
         {
@@ -171,6 +173,8 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
+        
+        await UpdateExpiredBookingsAsync(center.Id);
 
         var bookings = await _context.Bookings
             .Include(b => b.User)
@@ -245,6 +249,8 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
+        
+        await UpdateExpiredBookingsAsync(center.Id);
 
         var learners = await _context.Bookings
             .Include(b => b.User)
@@ -285,6 +291,8 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
+        
+        await UpdateExpiredBookingsAsync(center.Id);
 
         var learners = await _context.Bookings
             .Include(b => b.User)
@@ -490,5 +498,27 @@ public class DrivingCenterController : ControllerBase
             booking.EndDate,
             records
         });
+    }
+    
+    private async Task UpdateExpiredBookingsAsync(int drivingCenterId)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        var expiredBookings = await _context.Bookings
+            .Where(b =>
+                b.DrivingCenterId == drivingCenterId &&
+                b.Status == "Active" &&
+                b.EndDate.Date < today)
+            .ToListAsync();
+
+        if (expiredBookings.Count == 0)
+            return;
+
+        foreach (var booking in expiredBookings)
+        {
+            booking.Status = "Completed";
+        }
+
+        await _context.SaveChangesAsync();
     }
 }
