@@ -1,19 +1,15 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using DriveHub.Areas.Users.DTOs;
 using DriveHub.Data;
 using DriveHub.Models;
+using DriveHub.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Cryptography;
-using DriveHub.Services;
-using System.Security.Cryptography;
-using System.Security.Claims;
-using DriveHub.Areas.Users.DTOs;
-using Microsoft.EntityFrameworkCore;
 
 namespace DriveHub.Areas.Users.Controllers;
 
@@ -24,7 +20,7 @@ public class UserController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
     private readonly IEmailService _emailService;
-    
+
     public UserController(ApplicationDbContext db, IConfiguration config, IEmailService emailService)
     {
         _db = db;
@@ -46,7 +42,7 @@ public class UserController : ControllerBase
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
         return Convert.ToHexString(bytes);
     }
-    
+
     private string GenerateJwtToken(User user)
     {
         var claims = new[]
@@ -75,7 +71,7 @@ public class UserController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-    
+
     private static string GenerateSecureRefreshToken()
     {
         var bytes = RandomNumberGenerator.GetBytes(64);
@@ -90,7 +86,6 @@ public class UserController : ControllerBase
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
         return Convert.ToHexString(bytes);
     }
-    
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
@@ -128,17 +123,21 @@ public class UserController : ControllerBase
         var accessToken = GenerateJwtToken(user);
 
         var rawRefreshToken = GenerateSecureRefreshToken();
+        var nowUtc = DateTime.UtcNow;
+
         var refreshToken = new RefreshToken
         {
             UserId = user.UserId,
             TokenHash = HashTokenValue(rawRefreshToken),
-            ExpiresAt = DateTime.UtcNow.AddDays(7)
+            CreatedAt = nowUtc,
+            ExpiresAt = nowUtc.AddDays(7),
+            RevokedAt = null
         };
 
         _db.RefreshTokens.Add(refreshToken);
         await _db.SaveChangesAsync();
 
-        bool isProfileComplete = true;
+        var isProfileComplete = true;
 
         if (user.UserRole == "DrivingCenter")
         {
@@ -147,7 +146,7 @@ public class UserController : ControllerBase
 
             isProfileComplete = center?.IsProfileComplete ?? false;
         }
-        
+
         return Ok(new
         {
             token = accessToken,
@@ -156,10 +155,10 @@ public class UserController : ControllerBase
             email = user.UserEmail,
             role = user.UserRole,
             mustChangePassword = user.MustChangePassword,
-            isProfileComplete = isProfileComplete
+            isProfileComplete
         });
     }
-    
+
     [Authorize]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
@@ -190,7 +189,7 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "Password changed successfully." });
     }
-    
+
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
     {
@@ -202,12 +201,13 @@ public class UserController : ControllerBase
         {
             var rawToken = GenerateSecureToken();
             var tokenHash = HashToken(rawToken);
+            var nowUtc = DateTime.UtcNow;
 
             var resetToken = new PasswordResetToken
             {
                 UserId = user.UserId,
                 TokenHash = tokenHash,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                ExpiresAt = nowUtc.AddMinutes(15),
                 IsUsed = false
             };
 
@@ -237,7 +237,7 @@ public class UserController : ControllerBase
             message = "If an account with that email exists, a password reset link has been sent."
         });
     }
-    
+
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
     {
@@ -264,7 +264,7 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "Password reset successfully." });
     }
-    
+
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
     {
@@ -280,7 +280,9 @@ public class UserController : ControllerBase
         if (existingToken == null)
             return Unauthorized(new { message = "Invalid or expired refresh token." });
 
-        existingToken.RevokedAt = DateTime.UtcNow;
+        var nowUtc = DateTime.UtcNow;
+
+        existingToken.RevokedAt = nowUtc;
 
         var newAccessToken = GenerateJwtToken(existingToken.User);
         var newRawRefreshToken = GenerateSecureRefreshToken();
@@ -289,7 +291,9 @@ public class UserController : ControllerBase
         {
             UserId = existingToken.UserId,
             TokenHash = HashTokenValue(newRawRefreshToken),
-            ExpiresAt = DateTime.UtcNow.AddDays(7)
+            CreatedAt = nowUtc,
+            ExpiresAt = nowUtc.AddDays(7),
+            RevokedAt = null
         };
 
         _db.RefreshTokens.Add(newRefreshToken);
@@ -305,7 +309,7 @@ public class UserController : ControllerBase
             mustChangePassword = existingToken.User.MustChangePassword
         });
     }
-    
+
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] RefreshTokenRequestDto dto)
     {
@@ -324,7 +328,7 @@ public class UserController : ControllerBase
 
         return Ok(new { message = "Logged out successfully." });
     }
-    
+
     [Authorize(Roles = "User")]
     [HttpPost("book-driving-center")]
     public async Task<IActionResult> BookDrivingCenter([FromBody] BookingRequestDto dto)
@@ -337,7 +341,9 @@ public class UserController : ControllerBase
         if (!int.TryParse(userIdClaim, out var userId))
             return Unauthorized(new { message = "Invalid token." });
 
-        if (dto.StartDate.Date < DateTime.UtcNow.Date)
+        var startDateUtc = DateTime.SpecifyKind(dto.StartDate.Date, DateTimeKind.Utc);
+
+        if (startDateUtc < DateTime.UtcNow.Date)
             return BadRequest(new { message = "Start date cannot be in the past." });
 
         var allowedServices = new[] { "Bike", "Car" };
@@ -363,11 +369,11 @@ public class UserController : ControllerBase
         if (selectedPackage == null)
             return BadRequest(new { message = "Selected package is not offered by this driving center." });
 
-        var endDate = dto.DurationType switch
+        var endDateUtc = dto.DurationType switch
         {
-            "2Weeks" => dto.StartDate.Date.AddDays(14),
-            "1Month" => dto.StartDate.Date.AddMonths(1),
-            _ => dto.StartDate.Date
+            "2Weeks" => startDateUtc.AddDays(14),
+            "1Month" => startDateUtc.AddMonths(1),
+            _ => startDateUtc
         };
 
         var booking = new Booking
@@ -377,8 +383,8 @@ public class UserController : ControllerBase
             ServiceType = dto.ServiceType,
             DurationType = dto.DurationType,
             PriceNpr = selectedPackage.PriceNpr,
-            StartDate = dto.StartDate.Date,
-            EndDate = endDate,
+            StartDate = startDateUtc,
+            EndDate = endDateUtc,
             Status = "PendingStart"
         };
 
@@ -392,7 +398,7 @@ public class UserController : ControllerBase
             booking.Status
         });
     }
-    
+
     [Authorize(Roles = "User")]
     [HttpGet("my-bookings")]
     public async Task<IActionResult> GetMyBookings()

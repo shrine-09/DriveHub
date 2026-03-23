@@ -415,7 +415,7 @@ public class DrivingCenterController : ControllerBase
         if (booking.Status != "Active")
             return BadRequest(new { message = "Only active learners can be rated." });
 
-        var sessionDate = dto.Date.Date;
+        var sessionDate = DateTime.SpecifyKind(dto.Date.Date, DateTimeKind.Utc);
 
         if (sessionDate > DateTime.UtcNow.Date)
             return BadRequest(new { message = "Session date cannot be in the future." });
