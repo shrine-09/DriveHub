@@ -75,8 +75,25 @@ export default function MarkAttendancePage() {
         return learners.find((learner) => learner.bookingId === selectedBookingId) || null;
     }, [learners, selectedBookingId]);
 
+    const todayDateOnly = useMemo(() => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }, []);
+
+    const selectedLearnerStartDate = useMemo(() => {
+        if (!selectedLearner) return null;
+        const start = new Date(selectedLearner.startDate);
+        return new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    }, [selectedLearner]);
+
+    const hasTrainingStarted = useMemo(() => {
+        if (!selectedLearnerStartDate) return false;
+        return todayDateOnly >= selectedLearnerStartDate;
+    }, [todayDateOnly, selectedLearnerStartDate]);
+
     const canSubmit = useMemo(() => {
         if (!selectedBookingId || isPresent === null) return false;
+        if (!hasTrainingStarted) return false;
         if (isPresent === false) return true;
 
         return (
@@ -87,6 +104,7 @@ export default function MarkAttendancePage() {
     }, [
         selectedBookingId,
         isPresent,
+        hasTrainingStarted,
         vehicleControl,
         trafficAwareness,
         confidenceDiscipline,
@@ -104,7 +122,7 @@ export default function MarkAttendancePage() {
     };
 
     const handleSubmit = async () => {
-        if (!selectedBookingId || isPresent === null) return;
+        if (!selectedBookingId || isPresent === null || !hasTrainingStarted) return;
 
         setIsSubmitting(true);
         setStatusMessage("");
@@ -216,6 +234,32 @@ export default function MarkAttendancePage() {
                     <>
                         <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                             <CardHeader>
+                                <CardTitle className="text-slate-900">Training Schedule</CardTitle>
+                                <CardDescription className="text-slate-600">
+                                    Current training period for {selectedLearner.user.userName}.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                                <p className="text-slate-700">
+                                    <span className="font-medium text-slate-900">Training starts:</span>{" "}
+                                    {new Date(selectedLearner.startDate).toLocaleDateString()}
+                                </p>
+                                <p className="text-slate-700">
+                                    <span className="font-medium text-slate-900">Training ends:</span>{" "}
+                                    {new Date(selectedLearner.endDate).toLocaleDateString()}
+                                </p>
+
+                                {!hasTrainingStarted && (
+                                    <div className="rounded-md border border-amber-300/50 bg-amber-50 px-4 py-3 text-amber-800">
+                                        Training has not started yet. Attendance can only be recorded from{" "}
+                                        {new Date(selectedLearner.startDate).toLocaleDateString()}.
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                            <CardHeader>
                                 <CardTitle className="text-slate-900">Attendance</CardTitle>
                                 <CardDescription className="text-slate-600">
                                     Mark whether {selectedLearner.user.userName} attended today’s session.
@@ -231,6 +275,7 @@ export default function MarkAttendancePage() {
                                             : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
                                     }
                                     onClick={() => setIsPresent(true)}
+                                    disabled={!hasTrainingStarted}
                                 >
                                     Present
                                 </Button>
@@ -244,13 +289,14 @@ export default function MarkAttendancePage() {
                                             : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
                                     }
                                     onClick={() => setIsPresent(false)}
+                                    disabled={!hasTrainingStarted}
                                 >
                                     Absent
                                 </Button>
                             </CardContent>
                         </Card>
 
-                        {isPresent === true && (
+                        {isPresent === true && hasTrainingStarted && (
                             <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                                 <CardHeader>
                                     <CardTitle className="text-slate-900">Daily Skill Ratings</CardTitle>
@@ -332,6 +378,7 @@ export default function MarkAttendancePage() {
                     onChange={(e) => setRemarks(e.target.value)}
                     placeholder="Add remarks for today's session..."
                     className="min-h-28 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                    disabled={!hasTrainingStarted}
                 />
                             </CardContent>
                         </Card>

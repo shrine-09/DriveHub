@@ -414,11 +414,30 @@ public class DrivingCenterController : ControllerBase
 
         if (booking.Status != "Active")
             return BadRequest(new { message = "Only active learners can be rated." });
-
+        
         var sessionDate = DateTime.SpecifyKind(dto.Date.Date, DateTimeKind.Utc);
 
         if (sessionDate > DateTime.UtcNow.Date)
             return BadRequest(new { message = "Session date cannot be in the future." });
+        
+        var bookingStartDate = booking.StartDate.Date;
+        var bookingEndDate = booking.EndDate.Date;
+
+        if (sessionDate < bookingStartDate)
+        {
+            return BadRequest(new
+            {
+                message = "Attendance cannot be recorded before the learner's training start date."
+            });
+        }
+
+        if (sessionDate > bookingEndDate)
+        {
+            return BadRequest(new
+            {
+                message = "Attendance cannot be recorded after the learner's training end date."
+            });
+        }
 
         if (dto.IsPresent)
         {
