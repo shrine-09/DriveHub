@@ -1,18 +1,16 @@
-import * as React from "react"
+import * as React from "react";
 import {
   IconClipboardList,
   IconDashboard,
-  IconHelp,
-  IconSearch,
-  IconSettings,
   IconUsers,
   IconBuildingCommunity,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
@@ -21,7 +19,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 const data = {
   user: {
@@ -53,26 +51,22 @@ const data = {
       icon: IconBuildingCommunity,
     },
   ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "/admin/settings",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("role");
+    localStorage.removeItem("name");
+    localStorage.removeItem("email");
+    localStorage.removeItem("mustChangePassword");
+    localStorage.removeItem("isProfileComplete");
+    navigate("/login");
+  };
+
   return (
       <Sidebar collapsible="offcanvas" {...props}>
         <SidebarHeader>
@@ -93,12 +87,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarContent>
           <NavMain items={data.navMain} />
           <NavDocuments items={data.documents} />
-          <NavSecondary items={data.navSecondary} className="mt-auto" />
         </SidebarContent>
 
         <SidebarFooter>
-          <NavUser user={data.user} />
+          <div className="space-y-3 p-2">
+            <div className="rounded-lg border px-3 py-2">
+              <p className="text-sm font-medium">{data.user.name}</p>
+              <p className="text-xs text-muted-foreground">{data.user.email}</p>
+            </div>
+
+            <Button
+                type="button"
+                variant="outline"
+                onClick={handleLogout}
+                className="w-full justify-start cursor-pointer"
+            >
+              <LogOut className="mr-2 size-4" />
+              Logout
+            </Button>
+          </div>
         </SidebarFooter>
       </Sidebar>
-  )
+  );
 }

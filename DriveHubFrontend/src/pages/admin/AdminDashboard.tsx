@@ -6,7 +6,13 @@ import {
     SidebarInset,
     SidebarProvider,
 } from "@/components/ui/sidebar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Building2, Clock3, ArrowRight } from "lucide-react";
 import { getPendingDrivingCenterApplications } from "@/services/admin/adminServices";
