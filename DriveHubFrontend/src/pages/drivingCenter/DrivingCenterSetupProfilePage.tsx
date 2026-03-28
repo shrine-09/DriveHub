@@ -15,7 +15,7 @@ import LocationPickerMap from "@/components/drivingCenter/LocationPickerMap";
 
 type PackageItem = {
     serviceType: string;
-    durationInDays: string;
+    durationInDays: number;
     priceNpr: string;
 };
 

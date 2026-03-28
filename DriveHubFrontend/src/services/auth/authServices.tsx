@@ -125,18 +125,25 @@ export const setupDrivingCenterProfile = async (payload: {
     address: string;
     district: string;
     municipality: string;
-    latitude: number | null;
-    longitude: number | null;
-    description: string;
+    latitude: number;
+    longitude: number;
+    description?: string;
     packages: {
         serviceType: string;
         durationInDays: number;
         priceNpr: number;
     }[];
 }) => {
+    const token = localStorage.getItem("token");
+
     const response = await apiClient.post(
         "https://localhost:7234/api/drivingcenters/DrivingCenter/setup-profile",
-        payload
+        payload,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
     );
 
     return response.data;

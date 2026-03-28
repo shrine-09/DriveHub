@@ -12,7 +12,7 @@ import { getMyBookings } from "@/services/auth/authServices";
 type UserBooking = {
     bookingId: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
     startDate: string;
     endDate: string;
@@ -105,7 +105,9 @@ export default function UserBookingsPage() {
 
                                         <div>
                                             <p className="font-medium text-slate-900">Duration</p>
-                                            <p className="text-slate-600">{booking.durationType}</p>
+                                            <p className="text-slate-600">
+                                                {booking.durationInDays} day{booking.durationInDays > 1 ? "s" : ""}
+                                            </p>
                                         </div>
 
                                         <div>

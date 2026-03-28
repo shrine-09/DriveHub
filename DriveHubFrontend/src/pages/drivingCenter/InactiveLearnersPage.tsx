@@ -12,7 +12,7 @@ import { getInactiveLearners } from "@/services/auth/authServices";
 type InactiveLearner = {
     bookingId: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
     startDate: string;
     endDate: string;
@@ -116,7 +116,7 @@ export default function InactiveLearnersPage() {
 
                                         <div>
                                             <p className="font-medium text-slate-900">Duration</p>
-                                            <p className="text-slate-600">{learner.durationType}</p>
+                                            <p className="text-slate-600">{learner.durationInDays}</p>
                                         </div>
 
                                         <div>

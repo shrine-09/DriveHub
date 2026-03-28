@@ -17,7 +17,7 @@ import {
 type ActiveLearner = {
     bookingId: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
     startDate: string;
     endDate: string;
@@ -218,7 +218,7 @@ export default function MarkAttendancePage() {
                                             {learner.user.userName}
                                         </p>
                                         <p className="text-sm text-slate-600">
-                                            {learner.serviceType} · {learner.durationType}
+                                            {learner.serviceType} · {learner.durationInDays}
                                         </p>
                                         <p className="text-sm text-slate-500">
                                             {learner.user.userEmail}

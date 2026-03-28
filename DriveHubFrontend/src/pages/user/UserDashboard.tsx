@@ -17,7 +17,7 @@ import { getPublicDrivingCenters } from "@/services/auth/authServices";
 type DrivingCenterPackage = {
     id: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
 };
 

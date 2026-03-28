@@ -30,7 +30,7 @@ L.Icon.Default.mergeOptions({
 type DrivingCenterPackage = {
     id: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
 };
 

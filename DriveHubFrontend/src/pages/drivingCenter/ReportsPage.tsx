@@ -15,7 +15,7 @@ import {
 type ActiveLearner = {
     bookingId: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
     startDate: string;
     endDate: string;
@@ -45,7 +45,7 @@ type LearnerSessionHistory = {
         userEmail: string;
     };
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     startDate: string;
     endDate: string;
     records: SessionRecord[];
@@ -173,7 +173,7 @@ export default function ReportsPage() {
                                     >
                                         <p className="font-medium">{learner.user.userName}</p>
                                         <p className="text-sm text-slate-600">
-                                            {learner.serviceType} · {learner.durationType}
+                                            {learner.serviceType} · {learner.durationInDays}
                                         </p>
                                         <p className="text-sm text-slate-500">{learner.user.userEmail}</p>
                                     </button>

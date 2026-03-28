@@ -17,7 +17,7 @@ import { getPublicDrivingCenters } from "@/services/auth/authServices";
 type DrivingCenterPackage = {
     id: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
 };
 
@@ -200,7 +200,7 @@ export default function UserSearchPage() {
                                                     variant="secondary"
                                                     className="bg-slate-100 text-slate-700"
                                                 >
-                                                    {pkg.serviceType} · {pkg.durationType}
+                                                    {pkg.serviceType} · {pkg.durationInDays} day{pkg.durationInDays > 1 ? "s" : ""}
                                                 </Badge>
                                             ))}
                                         </div>

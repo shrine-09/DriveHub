@@ -29,7 +29,7 @@ import {
 
 type PackageItem = {
     serviceType: string;
-    durationInDays: string;
+    durationInDays: number;
     priceNpr: string;
 };
 
