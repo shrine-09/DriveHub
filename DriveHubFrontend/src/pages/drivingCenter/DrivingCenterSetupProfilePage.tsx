@@ -15,7 +15,7 @@ import LocationPickerMap from "@/components/drivingCenter/LocationPickerMap";
 
 type PackageItem = {
     serviceType: string;
-    durationType: string;
+    durationInDays: string;
     priceNpr: string;
 };
 
@@ -30,7 +30,7 @@ export default function DrivingCenterSetupProfilePage() {
     const [description, setDescription] = useState("");
 
     const [packages, setPackages] = useState<PackageItem[]>([
-        { serviceType: "", durationType: "", priceNpr: "" },
+        { serviceType: "", durationInDays: "", priceNpr: "" },
     ]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,7 +58,7 @@ export default function DrivingCenterSetupProfilePage() {
     const addServiceCard = () => {
         setPackages((prev) => [
             ...prev,
-            { serviceType: "", durationType: "", priceNpr: "" },
+            { serviceType: "", durationInDays: "", priceNpr: "" },
         ]);
     };
 
@@ -109,7 +109,7 @@ export default function DrivingCenterSetupProfilePage() {
         const completePackages = packages.filter(
             (pkg) =>
                 pkg.serviceType.trim() !== "" &&
-                pkg.durationType.trim() !== "" &&
+                pkg.durationInDays.trim() !== "" &&
                 pkg.priceNpr.trim() !== ""
         );
 
@@ -122,15 +122,15 @@ export default function DrivingCenterSetupProfilePage() {
         for (const pkg of packages) {
             const isCompletelyEmpty =
                 pkg.serviceType.trim() === "" &&
-                pkg.durationType.trim() === "" &&
+                pkg.durationInDays.trim() === "" &&
                 pkg.priceNpr.trim() === "";
 
             const isComplete =
                 pkg.serviceType.trim() !== "" &&
-                pkg.durationType.trim() !== "" &&
+                pkg.durationInDays.trim() !== "" &&
                 pkg.priceNpr.trim() !== "";
 
-            if (isCompletelyEmpty) {
+            if (isCompletelyEmpty || !isComplete) {
                 setStatusMessage(
                     "Please complete Services or delete unnecessary service rows."
                 );
@@ -138,15 +138,14 @@ export default function DrivingCenterSetupProfilePage() {
                 return false;
             }
 
-            if (!isComplete) {
-                setStatusMessage(
-                    "Please complete Services or delete unnecessary service rows."
-                );
-                setStatusType("error");
-                return false;
-            }
-
+            const duration = Number(pkg.durationInDays);
             const price = Number(pkg.priceNpr);
+
+            if (Number.isNaN(duration) || duration <= 0) {
+                setStatusMessage("Please enter a valid package duration in days.");
+                setStatusType("error");
+                return false;
+            }
 
             if (Number.isNaN(price) || price <= 0) {
                 setStatusMessage("Please enter a valid service price greater than 0.");
@@ -169,7 +168,7 @@ export default function DrivingCenterSetupProfilePage() {
         try {
             const formattedPackages = packages.map((pkg) => ({
                 serviceType: pkg.serviceType,
-                durationType: pkg.durationType,
+                durationInDays: Number(pkg.durationInDays),
                 priceNpr: Number(pkg.priceNpr),
             }));
 
@@ -333,7 +332,7 @@ export default function DrivingCenterSetupProfilePage() {
                             Services & Pricing
                         </CardTitle>
                         <CardDescription className="text-sm text-slate-600">
-                            Add the services you offer and set prices in NPR.
+                            Add the services you offer and set prices in NPR with custom duration in days.
                         </CardDescription>
                     </CardHeader>
 
@@ -365,21 +364,18 @@ export default function DrivingCenterSetupProfilePage() {
 
                                     <div>
                                         <label className="mb-2 block text-sm font-medium text-slate-700">
-                                            Duration
+                                            Duration (Days)
                                         </label>
-                                        <select
-                                            value={pkg.durationType}
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            className="h-12 text-base text-slate-900 placeholder:text-slate-400"
+                                            placeholder="Enter days"
+                                            value={pkg.durationInDays}
                                             onChange={(e) =>
-                                                updatePackage(index, "durationType", e.target.value)
+                                                updatePackage(index, "durationInDays", e.target.value)
                                             }
-                                            className="h-12 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-base text-slate-900 outline-none focus:ring-2 focus:ring-[#3B82F6]"
-                                        >
-                                            <option value="" className="text-slate-500">
-                                                Select duration
-                                            </option>
-                                            <option value="2Weeks">2 Weeks</option>
-                                            <option value="1Month">1 Month</option>
-                                        </select>
+                                        />
                                     </div>
 
                                     <div>
@@ -387,6 +383,8 @@ export default function DrivingCenterSetupProfilePage() {
                                             Price (NPR)
                                         </label>
                                         <Input
+                                            type="number"
+                                            min="1"
                                             className="h-12 text-base text-slate-900 placeholder:text-slate-400"
                                             placeholder="Enter price"
                                             value={pkg.priceNpr}

@@ -20,7 +20,7 @@ import {
 type DrivingCenterPackage = {
     id: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     priceNpr: number;
 };
 
@@ -49,7 +49,7 @@ export default function DrivingCenterDetailsPage() {
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
 
     const [selectedServiceType, setSelectedServiceType] = useState("");
-    const [selectedDurationType, setSelectedDurationType] = useState("");
+    const [selectedDurationInDays, setSelectedDurationInDays] = useState("");
     const [startDate, setStartDate] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,7 +57,9 @@ export default function DrivingCenterDetailsPage() {
         const loadCenter = async () => {
             try {
                 const data = await getPublicDrivingCenters();
-                const matchedCenter = data.find((item: PublicDrivingCenter) => String(item.id) === id);
+                const matchedCenter =
+                    data.find((item: PublicDrivingCenter) => String(item.id) === id) || null;
+
                 if (!matchedCenter) {
                     setStatusMessage("Driving center not found.");
                     setStatusType("error");
@@ -66,7 +68,8 @@ export default function DrivingCenterDetailsPage() {
                 }
             } catch (error: any) {
                 setStatusMessage(
-                    error.response?.data?.message || "Failed to load driving center details."
+                    error.response?.data?.message ||
+                    "Failed to load driving center details."
                 );
                 setStatusType("error");
             } finally {
@@ -88,22 +91,22 @@ export default function DrivingCenterDetailsPage() {
             ...new Set(
                 center.packages
                     .filter((pkg) => pkg.serviceType === selectedServiceType)
-                    .map((pkg) => pkg.durationType)
+                    .map((pkg) => pkg.durationInDays)
             ),
-        ];
+        ].sort((a, b) => a - b);
     }, [center, selectedServiceType]);
 
     const selectedPackage = useMemo(() => {
-        if (!center || !selectedServiceType || !selectedDurationType) return null;
+        if (!center || !selectedServiceType || !selectedDurationInDays) return null;
 
         return (
             center.packages.find(
                 (pkg) =>
                     pkg.serviceType === selectedServiceType &&
-                    pkg.durationType === selectedDurationType
+                    pkg.durationInDays === Number(selectedDurationInDays)
             ) || null
         );
-    }, [center, selectedDurationType, selectedServiceType]);
+    }, [center, selectedDurationInDays, selectedServiceType]);
 
     const handleBooking = async () => {
         setStatusMessage("");
@@ -117,8 +120,8 @@ export default function DrivingCenterDetailsPage() {
             return;
         }
 
-        if (!selectedDurationType) {
-            setStatusMessage("Please select a duration.");
+        if (!selectedDurationInDays) {
+            setStatusMessage("Please select a package duration.");
             setStatusType("error");
             return;
         }
@@ -135,7 +138,7 @@ export default function DrivingCenterDetailsPage() {
             const response = await bookDrivingCenter({
                 drivingCenterId: center.id,
                 serviceType: selectedServiceType,
-                durationType: selectedDurationType,
+                durationInDays: Number(selectedDurationInDays),
                 startDate,
             });
 
@@ -146,14 +149,23 @@ export default function DrivingCenterDetailsPage() {
                 navigate("/user/dashboard");
             }, 1200);
         } catch (error: any) {
+            console.error("Booking error:", error.response?.data || error);
+
             if (error.response?.data?.message) {
                 setStatusMessage(error.response.data.message);
             } else if (error.response?.data?.errors) {
-                const messages = Object.values(error.response.data.errors).flat().join("\n");
+                const messages = Object.values(error.response.data.errors)
+                    .flat()
+                    .join("\n");
                 setStatusMessage(messages);
+            } else if (typeof error.response?.data === "string") {
+                setStatusMessage(error.response.data);
             } else {
-                setStatusMessage("Failed to submit booking request.");
+                setStatusMessage(
+                    "Failed to submit booking request. Please check the backend response."
+                );
             }
+
             setStatusType("error");
         } finally {
             setIsSubmitting(false);
@@ -196,7 +208,8 @@ export default function DrivingCenterDetailsPage() {
                                         </h1>
 
                                         <p className="max-w-3xl text-sm leading-6 text-slate-100/90 md:text-base">
-                                            {center.description || "No description available for this driving center yet."}
+                                            {center.description ||
+                                                "No description available for this driving center yet."}
                                         </p>
                                     </div>
                                 </div>
@@ -219,7 +232,9 @@ export default function DrivingCenterDetailsPage() {
                             <div className="space-y-6 lg:col-span-2">
                                 <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                                     <CardHeader>
-                                        <CardTitle className="text-slate-900">Center Information</CardTitle>
+                                        <CardTitle className="text-slate-900">
+                                            Center Information
+                                        </CardTitle>
                                         <CardDescription className="text-slate-600">
                                             Contact and location details.
                                         </CardDescription>
@@ -232,8 +247,9 @@ export default function DrivingCenterDetailsPage() {
                                                     {center.address || "No address available"}
                                                 </p>
                                                 <p className="text-slate-600">
-                                                    {[center.municipality, center.district].filter(Boolean).join(", ") ||
-                                                        "No municipality/district saved"}
+                                                    {[center.municipality, center.district]
+                                                        .filter(Boolean)
+                                                        .join(", ") || "No municipality/district saved"}
                                                 </p>
                                             </div>
                                         </div>
@@ -250,7 +266,9 @@ export default function DrivingCenterDetailsPage() {
                                             <Mail className="mt-0.5 size-4 text-[#3B82F6]" />
                                             <div>
                                                 <p className="font-medium text-slate-900">Email</p>
-                                                <p className="break-all text-slate-600">{center.companyEmail}</p>
+                                                <p className="break-all text-slate-600">
+                                                    {center.companyEmail}
+                                                </p>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -258,7 +276,9 @@ export default function DrivingCenterDetailsPage() {
 
                                 <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                                     <CardHeader>
-                                        <CardTitle className="text-slate-900">Available Packages</CardTitle>
+                                        <CardTitle className="text-slate-900">
+                                            Available Packages
+                                        </CardTitle>
                                         <CardDescription className="text-slate-600">
                                             Current services and package pricing.
                                         </CardDescription>
@@ -273,7 +293,9 @@ export default function DrivingCenterDetailsPage() {
                                                     <p className="text-base font-semibold text-slate-900">
                                                         {pkg.serviceType}
                                                     </p>
-                                                    <p className="text-sm text-slate-600">{pkg.durationType}</p>
+                                                    <p className="text-sm text-slate-600">
+                                                        {pkg.durationInDays} day{pkg.durationInDays > 1 ? "s" : ""}
+                                                    </p>
                                                     <p className="text-sm font-medium text-[#2563EB]">
                                                         NPR {pkg.priceNpr}
                                                     </p>
@@ -302,7 +324,7 @@ export default function DrivingCenterDetailsPage() {
                                                 value={selectedServiceType}
                                                 onChange={(e) => {
                                                     setSelectedServiceType(e.target.value);
-                                                    setSelectedDurationType("");
+                                                    setSelectedDurationInDays("");
                                                 }}
                                                 className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#3B82F6]"
                                             >
@@ -320,14 +342,14 @@ export default function DrivingCenterDetailsPage() {
                                                 Duration
                                             </label>
                                             <select
-                                                value={selectedDurationType}
-                                                onChange={(e) => setSelectedDurationType(e.target.value)}
+                                                value={selectedDurationInDays}
+                                                onChange={(e) => setSelectedDurationInDays(e.target.value)}
                                                 className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#3B82F6]"
                                             >
                                                 <option value="">Select duration</option>
                                                 {availableDurations.map((duration) => (
                                                     <option key={duration} value={duration}>
-                                                        {duration}
+                                                        {duration} day{duration > 1 ? "s" : ""}
                                                     </option>
                                                 ))}
                                             </select>
@@ -353,7 +375,8 @@ export default function DrivingCenterDetailsPage() {
                                             {selectedPackage ? (
                                                 <div className="mt-2 space-y-1 text-slate-600">
                                                     <p>
-                                                        {selectedPackage.serviceType} · {selectedPackage.durationType}
+                                                        {selectedPackage.serviceType} · {selectedPackage.durationInDays} day
+                                                        {selectedPackage.durationInDays > 1 ? "s" : ""}
                                                     </p>
                                                     <p className="font-medium text-[#2563EB]">
                                                         NPR {selectedPackage.priceNpr}

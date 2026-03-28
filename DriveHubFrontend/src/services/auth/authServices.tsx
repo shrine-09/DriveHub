@@ -130,7 +130,7 @@ export const setupDrivingCenterProfile = async (payload: {
     description: string;
     packages: {
         serviceType: string;
-        durationType: string;
+        durationInDays: number;
         priceNpr: number;
     }[];
 }) => {
@@ -153,7 +153,7 @@ export const getDrivingCenterDashboardSummary = async () => {
 export const bookDrivingCenter = async (payload: {
     drivingCenterId: number;
     serviceType: string;
-    durationType: string;
+    durationInDays: number;
     startDate: string;
 }) => {
     const response = await apiClient.post(
