@@ -5,8 +5,6 @@ using DriveHub.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
 
 namespace DriveHub.Areas.DrivingCenters.Controllers;
 
@@ -55,9 +53,9 @@ public class DrivingCenterController : ControllerBase
             {
                 p.Id,
                 p.ServiceType,
-                p.DurationType,
+                p.DurationInDays,
                 p.PriceNpr
-            })
+            }).ToList()
         });
     }
 
@@ -87,7 +85,6 @@ public class DrivingCenterController : ControllerBase
             return BadRequest(new { message = "Longitude must be between -180 and 180." });
 
         var allowedServices = new[] { "Bike", "Car" };
-        var allowedDurations = new[] { "2Weeks", "1Month" };
 
         if (dto.Packages == null || dto.Packages.Count == 0)
             return BadRequest(new { message = "At least one service package is required." });
@@ -97,8 +94,8 @@ public class DrivingCenterController : ControllerBase
             if (!allowedServices.Contains(pkg.ServiceType))
                 return BadRequest(new { message = $"Invalid service type: {pkg.ServiceType}" });
 
-            if (!allowedDurations.Contains(pkg.DurationType))
-                return BadRequest(new { message = $"Invalid duration type: {pkg.DurationType}" });
+            if (pkg.DurationInDays <= 0)
+                return BadRequest(new { message = "Package duration must be greater than 0 days." });
 
             if (pkg.PriceNpr <= 0)
                 return BadRequest(new { message = "Package price must be greater than 0." });
@@ -120,7 +117,7 @@ public class DrivingCenterController : ControllerBase
         {
             DrivingCenterId = center.Id,
             ServiceType = pkg.ServiceType.Trim(),
-            DurationType = pkg.DurationType.Trim(),
+            DurationInDays = pkg.DurationInDays,
             PriceNpr = pkg.PriceNpr
         }).ToList();
 
@@ -129,7 +126,7 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(new { message = "Driving center profile setup completed successfully." });
     }
-    
+
     [Authorize(Roles = "DrivingCenter")]
     [HttpGet("dashboard-summary")]
     public async Task<IActionResult> GetDashboardSummary()
@@ -159,7 +156,7 @@ public class DrivingCenterController : ControllerBase
         var inactiveLearnersCount = await _context.Bookings.CountAsync(b =>
             b.DrivingCenterId == center.Id &&
             (b.Status == "Completed" || b.Status == "Cancelled"));
-        
+
         var today = DateTime.UtcNow.Date;
 
         var todaysRecords = await _context.TrainingSessionRecords
@@ -189,7 +186,7 @@ public class DrivingCenterController : ControllerBase
             todaysAbsentCount
         });
     }
-    
+
     [Authorize(Roles = "DrivingCenter")]
     [HttpGet("pending-bookings")]
     public async Task<IActionResult> GetPendingBookings()
@@ -204,7 +201,7 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
-        
+
         await UpdateExpiredBookingsAsync(center.Id);
 
         var bookings = await _context.Bookings
@@ -215,7 +212,7 @@ public class DrivingCenterController : ControllerBase
             {
                 b.BookingId,
                 b.ServiceType,
-                b.DurationType,
+                b.DurationInDays,
                 b.PriceNpr,
                 b.StartDate,
                 b.EndDate,
@@ -232,7 +229,7 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(bookings);
     }
-    
+
     [Authorize(Roles = "DrivingCenter")]
     [HttpPut("start-training/{bookingId}")]
     public async Task<IActionResult> StartTraining(int bookingId)
@@ -265,7 +262,7 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(new { message = "Training started successfully." });
     }
-    
+
     [Authorize(Roles = "DrivingCenter")]
     [HttpGet("active-learners")]
     public async Task<IActionResult> GetActiveLearners()
@@ -280,7 +277,7 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
-        
+
         await UpdateExpiredBookingsAsync(center.Id);
 
         var learners = await _context.Bookings
@@ -291,7 +288,7 @@ public class DrivingCenterController : ControllerBase
             {
                 b.BookingId,
                 b.ServiceType,
-                b.DurationType,
+                b.DurationInDays,
                 b.PriceNpr,
                 b.StartDate,
                 b.EndDate,
@@ -307,7 +304,7 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(learners);
     }
-    
+
     [Authorize(Roles = "DrivingCenter")]
     [HttpGet("inactive-learners")]
     public async Task<IActionResult> GetInactiveLearners()
@@ -322,7 +319,7 @@ public class DrivingCenterController : ControllerBase
 
         if (center == null)
             return NotFound(new { message = "Driving center profile not found." });
-        
+
         await UpdateExpiredBookingsAsync(center.Id);
 
         var learners = await _context.Bookings
@@ -335,7 +332,7 @@ public class DrivingCenterController : ControllerBase
             {
                 b.BookingId,
                 b.ServiceType,
-                b.DurationType,
+                b.DurationInDays,
                 b.PriceNpr,
                 b.StartDate,
                 b.EndDate,
@@ -351,7 +348,7 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(learners);
     }
-    
+
     [AllowAnonymous]
     [HttpGet("public-list")]
     public async Task<IActionResult> GetPublicDrivingCenters()
@@ -377,7 +374,7 @@ public class DrivingCenterController : ControllerBase
                 {
                     p.Id,
                     p.ServiceType,
-                    p.DurationType,
+                    p.DurationInDays,
                     p.PriceNpr
                 }).ToList()
             })
@@ -385,7 +382,7 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(centers);
     }
-    
+
     [Authorize(Roles = "DrivingCenter")]
     [HttpPost("record-training-session")]
     public async Task<IActionResult> RecordTrainingSession([FromBody] TrainingSessionRecordDto dto)
@@ -414,12 +411,12 @@ public class DrivingCenterController : ControllerBase
 
         if (booking.Status != "Active")
             return BadRequest(new { message = "Only active learners can be rated." });
-        
+
         var sessionDate = DateTime.SpecifyKind(dto.Date.Date, DateTimeKind.Utc);
 
         if (sessionDate > DateTime.UtcNow.Date)
             return BadRequest(new { message = "Session date cannot be in the future." });
-        
+
         var bookingStartDate = booking.StartDate.Date;
         var bookingEndDate = booking.EndDate.Date;
 
@@ -493,7 +490,7 @@ public class DrivingCenterController : ControllerBase
 
         return Ok(new { message = "Training session recorded successfully." });
     }
-    
+
     [Authorize(Roles = "DrivingCenter")]
     [HttpGet("learner-session-history/{bookingId}")]
     public async Task<IActionResult> GetLearnerSessionHistory(int bookingId)
@@ -543,13 +540,13 @@ public class DrivingCenterController : ControllerBase
                 booking.User.UserEmail
             },
             booking.ServiceType,
-            booking.DurationType,
+            booking.DurationInDays,
             booking.StartDate,
             booking.EndDate,
             records
         });
     }
-    
+
     private async Task UpdateExpiredBookingsAsync(int drivingCenterId)
     {
         var today = DateTime.UtcNow.Date;

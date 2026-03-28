@@ -11,7 +11,7 @@ public class Booking
     public DrivingCenter DrivingCenter { get; set; } = null!;
 
     public string ServiceType { get; set; } = string.Empty;   // Bike, Car
-    public string DurationType { get; set; } = string.Empty;  // 2Weeks, 1Month
+    public int DurationInDays { get; set; }
     public decimal PriceNpr { get; set; }
 
     public DateTime StartDate { get; set; }

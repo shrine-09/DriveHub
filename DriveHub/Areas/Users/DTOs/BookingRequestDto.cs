@@ -8,10 +8,10 @@ public class BookingRequestDto
     public int DrivingCenterId { get; set; }
 
     [Required]
-    public string ServiceType { get; set; } = string.Empty;   // Bike, Car
+    public string ServiceType { get; set; } = string.Empty;
 
-    [Required]
-    public string DurationType { get; set; } = string.Empty;  // 2Weeks, 1Month
+    [Range(1, 365, ErrorMessage = "Please select a valid package duration.")]
+    public int DurationInDays { get; set; }
 
     [Required]
     public DateTime StartDate { get; set; }

@@ -347,13 +347,12 @@ public class UserController : ControllerBase
             return BadRequest(new { message = "Start date cannot be in the past." });
 
         var allowedServices = new[] { "Bike", "Car" };
-        var allowedDurations = new[] { "2Weeks", "1Month" };
 
         if (!allowedServices.Contains(dto.ServiceType))
             return BadRequest(new { message = "Invalid service type selected." });
 
-        if (!allowedDurations.Contains(dto.DurationType))
-            return BadRequest(new { message = "Invalid duration type selected." });
+        if (dto.DurationInDays <= 0)
+            return BadRequest(new { message = "Invalid package duration selected." });
 
         var drivingCenter = await _db.DrivingCenters
             .Include(dc => dc.Packages)
@@ -364,24 +363,19 @@ public class UserController : ControllerBase
 
         var selectedPackage = drivingCenter.Packages.FirstOrDefault(p =>
             p.ServiceType == dto.ServiceType &&
-            p.DurationType == dto.DurationType);
+            p.DurationInDays == dto.DurationInDays);
 
         if (selectedPackage == null)
             return BadRequest(new { message = "Selected package is not offered by this driving center." });
 
-        var endDateUtc = dto.DurationType switch
-        {
-            "2Weeks" => startDateUtc.AddDays(14),
-            "1Month" => startDateUtc.AddMonths(1),
-            _ => startDateUtc
-        };
+        var endDateUtc = startDateUtc.AddDays(dto.DurationInDays);
 
         var booking = new Booking
         {
             UserId = userId,
             DrivingCenterId = drivingCenter.Id,
             ServiceType = dto.ServiceType,
-            DurationType = dto.DurationType,
+            DurationInDays = dto.DurationInDays,
             PriceNpr = selectedPackage.PriceNpr,
             StartDate = startDateUtc,
             EndDate = endDateUtc,
@@ -416,7 +410,7 @@ public class UserController : ControllerBase
             {
                 b.BookingId,
                 b.ServiceType,
-                b.DurationType,
+                b.DurationInDays,
                 b.PriceNpr,
                 b.StartDate,
                 b.EndDate,
