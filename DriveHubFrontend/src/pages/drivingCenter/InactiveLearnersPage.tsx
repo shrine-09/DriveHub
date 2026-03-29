@@ -5,7 +5,7 @@ import {
     CardContent,
 } from "@/components/ui/card";
 import { extendLearner, getInactiveLearners } from "@/services/auth/authServices";
-import {Input} from "@/components/ui/input.tsx";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 type InactiveLearner = {
@@ -32,6 +32,7 @@ export default function InactiveLearnersPage() {
     const [statusMessage, setStatusMessage] = useState("");
     const [extraDays, setExtraDays] = useState<Record<number, string>>({});
     const [extendingBookingId, setExtendingBookingId] = useState<number | null>(null);
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
     
     useEffect(() => {
         const loadLearners = async () => {
@@ -42,6 +43,7 @@ export default function InactiveLearnersPage() {
                 setStatusMessage(
                     error.response?.data?.message || "Failed to load inactive learners."
                 );
+                setStatusType("error");
             } finally {
                 setIsLoading(false);
             }
@@ -55,9 +57,11 @@ export default function InactiveLearnersPage() {
         const parsedDays = Number(value);
 
         setStatusMessage("");
+        setStatusType("");
 
         if (!value || Number.isNaN(parsedDays) || parsedDays <= 0) {
             setStatusMessage("Please enter a valid number of extra days.");
+            setStatusType("error");
             return;
         }
 
@@ -66,33 +70,47 @@ export default function InactiveLearnersPage() {
         try {
             const response = await extendLearner(bookingId, parsedDays);
 
-            setLearners((prev) =>
-                prev.map((learner) =>
-                    learner.bookingId === bookingId
-                        ? {
-                            ...learner,
-                            durationInDays: response.durationInDays,
-                            endDate: response.endDate,
-                            status: response.status,
-                            remainingDays: Math.max(
-                                response.durationInDays - learner.completedDays,
-                                0
-                            ),
-                            progressPercentage:
-                                response.durationInDays > 0
-                                    ? Math.round((learner.completedDays / response.durationInDays) * 100)
-                                    : 0,
-                        }
-                        : learner
-                )
-            );
+            if (response.status === "Active") {
+                setLearners((prev) =>
+                    prev.filter((learner) => learner.bookingId !== bookingId)
+                );
+            } else {
+                setLearners((prev) =>
+                    prev.map((learner) =>
+                        learner.bookingId === bookingId
+                            ? {
+                                ...learner,
+                                durationInDays: response.durationInDays,
+                                endDate: response.endDate,
+                                status: response.status,
+                                remainingDays: Math.max(
+                                    response.durationInDays - learner.completedDays,
+                                    0
+                                ),
+                                progressPercentage:
+                                    response.durationInDays > 0
+                                        ? Math.round(
+                                            (learner.completedDays / response.durationInDays) * 100
+                                        )
+                                        : 0,
+                            }
+                            : learner
+                    )
+                );
+            }
 
-            setExtraDays((prev) => ({ ...prev, [bookingId]: "" }));
+            setExtraDays((prev) => ({
+                ...prev,
+                [bookingId]: "",
+            }));
+
             setStatusMessage(response.message || "Learner extended successfully.");
+            setStatusType("success");
         } catch (error: any) {
             setStatusMessage(
                 error.response?.data?.message || "Failed to extend learner."
             );
+            setStatusType("error");
         } finally {
             setExtendingBookingId(null);
         }
@@ -111,7 +129,13 @@ export default function InactiveLearnersPage() {
                 </div>
 
                 {statusMessage && (
-                    <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+                    <div
+                        className={`rounded-md border px-4 py-3 text-sm ${
+                            statusType === "success"
+                                ? "border-green-500/30 bg-green-500/10 text-green-700"
+                                : "border-red-500/30 bg-red-500/10 text-red-700"
+                        }`}
+                    >
                         {statusMessage}
                     </div>
                 )}

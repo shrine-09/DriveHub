@@ -4,7 +4,9 @@ import {
     Card,
     CardContent,
 } from "@/components/ui/card";
-import { getActiveLearners } from "@/services/auth/authServices";
+import { extendLearner, getActiveLearners } from "@/services/auth/authServices";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type ActiveLearner = {
     bookingId: number;
