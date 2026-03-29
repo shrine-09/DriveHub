@@ -592,4 +592,55 @@ public class DrivingCenterController : ControllerBase
         if (hasChanges)
             await _context.SaveChangesAsync();
     }
+    
+    [Authorize(Roles = "DrivingCenter")]
+    [HttpPut("extend-learner/{bookingId}")]
+    public async Task<IActionResult> ExtendLearner(int bookingId, [FromBody] ExtendLearnerDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var center = await _context.DrivingCenters
+            .FirstOrDefaultAsync(dc => dc.UserId == userId);
+
+        if (center == null)
+            return NotFound(new { message = "Driving center profile not found." });
+
+        var booking = await _context.Bookings
+            .Include(b => b.User)
+            .FirstOrDefaultAsync(b =>
+                b.BookingId == bookingId &&
+                b.DrivingCenterId == center.Id);
+
+        if (booking == null)
+            return NotFound(new { message = "Learner booking not found." });
+
+        if (booking.Status != "Active" && booking.Status != "Completed")
+            return BadRequest(new { message = "Only active or completed learners can be extended." });
+
+        if (dto.ExtraDays <= 0)
+            return BadRequest(new { message = "Extra days must be greater than 0." });
+
+        booking.DurationInDays += dto.ExtraDays;
+        booking.EndDate = booking.EndDate.AddDays(dto.ExtraDays);
+
+        if (booking.Status == "Completed")
+            booking.Status = "Active";
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Learner service extended successfully.",
+            booking.BookingId,
+            booking.DurationInDays,
+            booking.EndDate,
+            booking.Status
+        });
+    }
 }

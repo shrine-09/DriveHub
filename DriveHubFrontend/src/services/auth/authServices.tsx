@@ -243,3 +243,12 @@ export const getLearnerSessionHistory = async (bookingId: number) => {
 
     return response.data;
 };
+
+export const extendLearner = async (bookingId: number, extraDays: number) => {
+    const response = await apiClient.put(
+        `https://localhost:7234/api/drivingcenters/DrivingCenter/extend-learner/${bookingId}`,
+        { extraDays }
+    );
+
+    return response.data;
+};
