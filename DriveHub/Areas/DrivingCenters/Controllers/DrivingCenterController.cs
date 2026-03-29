@@ -282,6 +282,7 @@ public class DrivingCenterController : ControllerBase
 
         var learners = await _context.Bookings
             .Include(b => b.User)
+            .Include(b => b.TrainingSessionRecords)
             .Where(b => b.DrivingCenterId == center.Id && b.Status == "Active")
             .OrderByDescending(b => b.StartDate)
             .Select(b => new
@@ -293,6 +294,11 @@ public class DrivingCenterController : ControllerBase
                 b.StartDate,
                 b.EndDate,
                 b.Status,
+                completedDays = b.TrainingSessionRecords.Count(r => r.IsPresent),
+                remainingDays = b.DurationInDays - b.TrainingSessionRecords.Count(r => r.IsPresent),
+                progressPercentage = b.DurationInDays > 0
+                    ? (int)Math.Round((double)b.TrainingSessionRecords.Count(r => r.IsPresent) / b.DurationInDays * 100)
+                    : 0,
                 user = new
                 {
                     b.User.UserId,
@@ -324,6 +330,7 @@ public class DrivingCenterController : ControllerBase
 
         var learners = await _context.Bookings
             .Include(b => b.User)
+            .Include(b => b.TrainingSessionRecords)
             .Where(b =>
                 b.DrivingCenterId == center.Id &&
                 (b.Status == "Completed" || b.Status == "Cancelled"))
@@ -337,6 +344,11 @@ public class DrivingCenterController : ControllerBase
                 b.StartDate,
                 b.EndDate,
                 b.Status,
+                completedDays = b.TrainingSessionRecords.Count(r => r.IsPresent),
+                remainingDays = b.DurationInDays - b.TrainingSessionRecords.Count(r => r.IsPresent),
+                progressPercentage = b.DurationInDays > 0
+                    ? (int)Math.Round((double)b.TrainingSessionRecords.Count(r => r.IsPresent) / b.DurationInDays * 100)
+                    : 0,
                 user = new
                 {
                     b.User.UserId,
@@ -345,8 +357,6 @@ public class DrivingCenterController : ControllerBase
                 }
             })
             .ToListAsync();
-
-        return Ok(learners);
     }
 
     [AllowAnonymous]

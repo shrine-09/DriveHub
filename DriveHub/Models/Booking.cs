@@ -20,4 +20,6 @@ public class Booking
     public string Status { get; set; } = "PendingStart"; // PendingStart, Active, Completed, Cancelled
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    public ICollection<TrainingSessionRecord> TrainingSessionRecords { get; set; } = new List<TrainingSessionRecord>();
 }
