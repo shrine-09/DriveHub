@@ -20,6 +20,9 @@ type ActiveLearner = {
     startDate: string;
     endDate: string;
     status: string;
+    completedDays: number;
+    remainingDays: number;
+    progressPercentage: number;
     user: {
         userId: number;
         userName: string;
@@ -173,7 +176,7 @@ export default function ReportsPage() {
                                     >
                                         <p className="font-medium">{learner.user.userName}</p>
                                         <p className="text-sm text-slate-600">
-                                            {learner.serviceType} · {learner.durationInDays}
+                                            {learner.serviceType} · {learner.durationInDays} day{learner.durationInDays > 1 ? "s" : ""}
                                         </p>
                                         <p className="text-sm text-slate-500">{learner.user.userEmail}</p>
                                     </button>

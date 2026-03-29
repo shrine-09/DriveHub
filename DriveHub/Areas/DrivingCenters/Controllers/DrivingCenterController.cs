@@ -357,6 +357,8 @@ public class DrivingCenterController : ControllerBase
                 }
             })
             .ToListAsync();
+
+        return Ok(learners);
     }
 
     [AllowAnonymous]

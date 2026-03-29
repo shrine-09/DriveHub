@@ -17,6 +17,9 @@ type InactiveLearner = {
     startDate: string;
     endDate: string;
     status: string;
+    completedDays: number;
+    remainingDays: number;
+    progressPercentage: number;
     user: {
         userId: number;
         userName: string;
@@ -116,7 +119,9 @@ export default function InactiveLearnersPage() {
 
                                         <div>
                                             <p className="font-medium text-slate-900">Duration</p>
-                                            <p className="text-slate-600">{learner.durationInDays}</p>
+                                            <p className="text-slate-600">
+                                                {learner.durationInDays} day{learner.durationInDays > 1 ? "s" : ""}
+                                            </p>
                                         </div>
 
                                         <div>
@@ -127,6 +132,33 @@ export default function InactiveLearnersPage() {
                                         <div>
                                             <p className="font-medium text-slate-900">Status</p>
                                             <p className="text-slate-600">{learner.status}</p>
+                                        </div>
+
+                                        <div>
+                                            <p className="font-medium text-slate-900">Completed</p>
+                                            <p className="text-slate-600">
+                                                {learner.completedDays} day{learner.completedDays !== 1 ? "s" : ""}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="font-medium text-slate-900">Remaining</p>
+                                            <p className="text-slate-600">
+                                                {learner.remainingDays > 0 ? learner.remainingDays : 0} day
+                                                {learner.remainingDays !== 1 ? "s" : ""}
+                                            </p>
+                                        </div>
+
+                                        <div className="sm:col-span-2">
+                                            <p className="font-medium text-slate-900">Progress</p>
+                                            <p className="text-slate-600">{learner.progressPercentage}%</p>
+
+                                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                                                <div
+                                                    className="h-full rounded-full bg-[#3B82F6]"
+                                                    style={{ width: `${Math.min(learner.progressPercentage, 100)}%` }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
