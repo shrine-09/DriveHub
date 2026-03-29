@@ -30,6 +30,9 @@ export default function ActiveLearnersPage() {
     const [learners, setLearners] = useState<ActiveLearner[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [statusMessage, setStatusMessage] = useState("");
+    const [extraDays, setExtraDays] = useState<Record<number, string>>({});
+    const [extendingBookingId, setExtendingBookingId] = useState<number | null>(null);
+    const [statusType, setStatusType] = useState<"success" | "error" | "">("");
 
     useEffect(() => {
         const loadLearners = async () => {
@@ -40,6 +43,7 @@ export default function ActiveLearnersPage() {
                 setStatusMessage(
                     error.response?.data?.message || "Failed to load active learners."
                 );
+                setStatusType("error");
             } finally {
                 setIsLoading(false);
             }
@@ -48,6 +52,64 @@ export default function ActiveLearnersPage() {
         loadLearners();
     }, []);
 
+    const handleExtendLearner = async (bookingId: number) => {
+        const value = extraDays[bookingId] ?? "";
+        const parsedDays = Number(value);
+
+        setStatusMessage("");
+        setStatusType("");
+
+        if (!value || Number.isNaN(parsedDays) || parsedDays <= 0) {
+            setStatusMessage("Please enter a valid number of extra days.");
+            setStatusType("error");
+            return;
+        }
+
+        setExtendingBookingId(bookingId);
+
+        try {
+            const response = await extendLearner(bookingId, parsedDays);
+
+            setLearners((prev) =>
+                prev.map((learner) =>
+                    learner.bookingId === bookingId
+                        ? {
+                            ...learner,
+                            durationInDays: response.durationInDays,
+                            endDate: response.endDate,
+                            status: response.status,
+                            remainingDays: Math.max(
+                                response.durationInDays - learner.completedDays,
+                                0
+                            ),
+                            progressPercentage:
+                                response.durationInDays > 0
+                                    ? Math.round(
+                                        (learner.completedDays / response.durationInDays) * 100
+                                    )
+                                    : 0,
+                        }
+                        : learner
+                )
+            );
+
+            setExtraDays((prev) => ({
+                ...prev,
+                [bookingId]: "",
+            }));
+
+            setStatusMessage(response.message || "Learner extended successfully.");
+            setStatusType("success");
+        } catch (error: any) {
+            setStatusMessage(
+                error.response?.data?.message || "Failed to extend learner."
+            );
+            setStatusType("error");
+        } finally {
+            setExtendingBookingId(null);
+        }
+    };
+    
     return (
         <DrivingCenterLayout>
             <div className="space-y-6">
@@ -61,7 +123,13 @@ export default function ActiveLearnersPage() {
                 </div>
 
                 {statusMessage && (
-                    <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
+                    <div
+                        className={`rounded-md border px-4 py-3 text-sm ${
+                            statusType === "success"
+                                ? "border-green-500/30 bg-green-500/10 text-green-700"
+                                : "border-red-500/30 bg-red-500/10 text-red-700"
+                        }`}
+                    >
                         {statusMessage}
                     </div>
                 )}
@@ -94,6 +162,8 @@ export default function ActiveLearnersPage() {
                                     <th className="px-4 py-3 font-semibold text-slate-700">Training Period</th>
                                     <th className="px-4 py-3 font-semibold text-slate-700">Price</th>
                                     <th className="px-4 py-3 font-semibold text-slate-700">Status</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Extend</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Action</th>
                                 </tr>
                                 </thead>
 
@@ -154,6 +224,33 @@ export default function ActiveLearnersPage() {
 
                                         <td className="px-4 py-4 text-slate-600">
                                             {learner.status}
+                                        </td>
+
+                                        <td className="px-4 py-4">
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                placeholder="Extra days"
+                                                value={extraDays[learner.bookingId] ?? ""}
+                                                onChange={(e) =>
+                                                    setExtraDays((prev) => ({
+                                                        ...prev,
+                                                        [learner.bookingId]: e.target.value,
+                                                    }))
+                                                }
+                                                className="w-28 text-slate-900"
+                                            />
+                                        </td>
+
+                                        <td className="px-4 py-4">
+                                            <Button
+                                                type="button"
+                                                onClick={() => handleExtendLearner(learner.bookingId)}
+                                                disabled={extendingBookingId === learner.bookingId}
+                                                className="bg-[#3B82F6] text-white hover:bg-[#2563EB] disabled:bg-slate-200 disabled:text-slate-500"
+                                            >
+                                                {extendingBookingId === learner.bookingId ? "Extending..." : "Extend"}
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}
