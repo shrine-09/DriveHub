@@ -563,21 +563,33 @@ public class DrivingCenterController : ControllerBase
     {
         var today = DateTime.UtcNow.Date;
 
-        var expiredBookings = await _context.Bookings
+        var activeBookings = await _context.Bookings
+            .Include(b => b.TrainingSessionRecords)
             .Where(b =>
                 b.DrivingCenterId == drivingCenterId &&
-                b.Status == "Active" &&
-                b.EndDate.Date < today)
+                b.Status == "Active")
             .ToListAsync();
 
-        if (expiredBookings.Count == 0)
+        if (activeBookings.Count == 0)
             return;
 
-        foreach (var booking in expiredBookings)
+        var hasChanges = false;
+
+        foreach (var booking in activeBookings)
         {
-            booking.Status = "Completed";
+            var completedDays = booking.TrainingSessionRecords.Count(r => r.IsPresent);
+
+            var completedByAttendance = completedDays >= booking.DurationInDays;
+            var completedByDate = booking.EndDate.Date < today;
+
+            if (completedByAttendance || completedByDate)
+            {
+                booking.Status = "Completed";
+                hasChanges = true;
+            }
         }
 
-        await _context.SaveChangesAsync();
+        if (hasChanges)
+            await _context.SaveChangesAsync();
     }
 }
