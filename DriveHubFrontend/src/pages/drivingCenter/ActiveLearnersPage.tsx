@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Mail, User2 } from "lucide-react";
+import DrivingCenterLayout from "@/components/drivingCenter/DrivingCenterLayout";
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
-import DrivingCenterLayout from "@/components/drivingCenter/DrivingCenterLayout";
 import { getActiveLearners } from "@/services/auth/authServices";
 
 type ActiveLearner = {
@@ -80,101 +77,87 @@ export default function ActiveLearnersPage() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        {learners.map((learner) => (
-                            <Card
-                                key={learner.bookingId}
-                                className="border-slate-200/70 bg-white/95 shadow-sm"
-                            >
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-slate-900">
-                                        {learner.user.userName}
-                                    </CardTitle>
-                                </CardHeader>
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                                <thead className="bg-slate-50">
+                                <tr className="border-b border-slate-200 text-left">
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Learner</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Service</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Duration</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Completed</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Remaining</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Progress</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Training Period</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Price</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Status</th>
+                                </tr>
+                                </thead>
 
-                                <CardContent className="space-y-4 text-sm">
-                                    <div className="flex items-start gap-3">
-                                        <User2 className="mt-0.5 size-4 text-[#3B82F6]" />
-                                        <div>
-                                            <p className="font-medium text-slate-900">Learner</p>
-                                            <p className="text-slate-600">{learner.user.userName}</p>
-                                        </div>
-                                    </div>
+                                <tbody>
+                                {learners.map((learner) => (
+                                    <tr
+                                        key={learner.bookingId}
+                                        className="border-b border-slate-100 align-top hover:bg-slate-50/60"
+                                    >
+                                        <td className="px-4 py-4 font-medium text-slate-900">
+                                            {learner.user.userName}
+                                        </td>
 
-                                    <div className="flex items-start gap-3">
-                                        <Mail className="mt-0.5 size-4 text-[#3B82F6]" />
-                                        <div>
-                                            <p className="font-medium text-slate-900">Email</p>
-                                            <p className="break-all text-slate-600">
-                                                {learner.user.userEmail}
-                                            </p>
-                                        </div>
-                                    </div>
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.user.userEmail}
+                                        </td>
 
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div>
-                                            <p className="font-medium text-slate-900">Service</p>
-                                            <p className="text-slate-600">{learner.serviceType}</p>
-                                        </div>
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.serviceType}
+                                        </td>
 
-                                        <div>
-                                            <p className="font-medium text-slate-900">Duration</p>
-                                            <p className="text-slate-600">
-                                                {learner.durationInDays} day{learner.durationInDays > 1 ? "s" : ""}
-                                            </p>
-                                        </div>
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.durationInDays} day{learner.durationInDays > 1 ? "s" : ""}
+                                        </td>
 
-                                        <div>
-                                            <p className="font-medium text-slate-900">Price</p>
-                                            <p className="text-slate-600">NPR {learner.priceNpr}</p>
-                                        </div>
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.completedDays} day{learner.completedDays !== 1 ? "s" : ""}
+                                        </td>
 
-                                        <div>
-                                            <p className="font-medium text-slate-900">Status</p>
-                                            <p className="text-slate-600">{learner.status}</p>
-                                        </div>
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.remainingDays > 0 ? learner.remainingDays : 0} day
+                                            {learner.remainingDays !== 1 ? "s" : ""}
+                                        </td>
 
-                                        <div>
-                                            <p className="font-medium text-slate-900">Completed</p>
-                                            <p className="text-slate-600">
-                                                {learner.completedDays} day{learner.completedDays !== 1 ? "s" : ""}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="font-medium text-slate-900">Remaining</p>
-                                            <p className="text-slate-600">
-                                                {learner.remainingDays > 0 ? learner.remainingDays : 0} day
-                                                {learner.remainingDays !== 1 ? "s" : ""}
-                                            </p>
-                                        </div>
-
-                                        <div className="sm:col-span-2">
-                                            <p className="font-medium text-slate-900">Progress</p>
-                                            <p className="text-slate-600">{learner.progressPercentage}%</p>
-
-                                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                                                <div
-                                                    className="h-full rounded-full bg-[#3B82F6]"
-                                                    style={{ width: `${Math.min(learner.progressPercentage, 100)}%` }}
-                                                />
+                                        <td className="px-4 py-4">
+                                            <div className="space-y-2">
+                                                <p className="text-slate-600">{learner.progressPercentage}%</p>
+                                                <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
+                                                    <div
+                                                        className="h-full rounded-full bg-[#3B82F6]"
+                                                        style={{
+                                                            width: `${Math.min(learner.progressPercentage, 100)}%`,
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
+                                        </td>
 
-                                    <div className="flex items-start gap-3">
-                                        <CalendarDays className="mt-0.5 size-4 text-[#3B82F6]" />
-                                        <div>
-                                            <p className="font-medium text-slate-900">Training Period</p>
-                                            <p className="text-slate-600">
-                                                {new Date(learner.startDate).toLocaleDateString()} —{" "}
-                                                {new Date(learner.endDate).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {new Date(learner.startDate).toLocaleDateString()} <br />
+                                            <span className="text-slate-400">to</span> <br />
+                                            {new Date(learner.endDate).toLocaleDateString()}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            NPR {learner.priceNpr}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.status}
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>

@@ -83,7 +83,7 @@ public class ApplicationDbContext : DbContext
         
         modelBuilder.Entity<TrainingSessionRecord>()
             .HasOne(tsr => tsr.Booking)
-            .WithMany()
+            .WithMany(b => b.TrainingSessionRecords)
             .HasForeignKey(tsr => tsr.BookingId)
             .OnDelete(DeleteBehavior.Cascade);
     }

@@ -1,17 +1,11 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Mail, Play, User2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import DrivingCenterLayout from "@/components/drivingCenter/DrivingCenterLayout";
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
-import DrivingCenterLayout from "@/components/drivingCenter/DrivingCenterLayout";
-import {
-    getPendingLearners,
-    startTraining,
-} from "@/services/auth/authServices";
+import { Button } from "@/components/ui/button";
+import { getPendingLearners, startTraining } from "@/services/auth/authServices";
 
 type PendingLearner = {
     bookingId: number;
@@ -32,45 +26,48 @@ type PendingLearner = {
 export default function NewLearnersPage() {
     const [learners, setLearners] = useState<PendingLearner[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [actionId, setActionId] = useState<number | null>(null);
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState<"success" | "error" | "">("");
-
-    const loadLearners = async () => {
-        try {
-            const data = await getPendingLearners();
-            setLearners(data);
-        } catch (error: any) {
-            setStatusMessage(
-                error.response?.data?.message || "Failed to load new learners."
-            );
-            setStatusType("error");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [startingBookingId, setStartingBookingId] = useState<number | null>(null);
 
     useEffect(() => {
+        const loadLearners = async () => {
+            try {
+                const data = await getPendingLearners();
+                setLearners(data);
+            } catch (error: any) {
+                setStatusMessage(
+                    error.response?.data?.message || "Failed to load pending learners."
+                );
+                setStatusType("error");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         loadLearners();
     }, []);
 
     const handleStartTraining = async (bookingId: number) => {
-        setActionId(bookingId);
         setStatusMessage("");
         setStatusType("");
+        setStartingBookingId(bookingId);
 
         try {
             const response = await startTraining(bookingId);
+
+            setLearners((prev) => prev.filter((learner) => learner.bookingId !== bookingId));
             setStatusMessage(response.message || "Training started successfully.");
             setStatusType("success");
-            setLearners((prev) => prev.filter((item) => item.bookingId !== bookingId));
         } catch (error: any) {
-            setStatusMessage(
-                error.response?.data?.message || "Failed to start training."
-            );
+            if (error.response?.data?.message) {
+                setStatusMessage(error.response.data.message);
+            } else {
+                setStatusMessage("Failed to start training.");
+            }
             setStatusType("error");
         } finally {
-            setActionId(null);
+            setStartingBookingId(null);
         }
     };
 
@@ -82,7 +79,7 @@ export default function NewLearnersPage() {
                         New Learners
                     </h1>
                     <p className="text-sm text-slate-600">
-                        Learners who applied for a service but have not started training yet.
+                        Learners who have booked but have not started training yet.
                     </p>
                 </div>
 
@@ -101,93 +98,90 @@ export default function NewLearnersPage() {
                 {isLoading ? (
                     <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                         <CardContent className="py-10 text-center text-sm text-slate-500">
-                            Loading new learners...
+                            Loading pending learners...
                         </CardContent>
                     </Card>
                 ) : learners.length === 0 ? (
                     <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                         <CardContent className="py-10 text-center text-sm text-slate-500">
-                            No new learners at the moment.
+                            No pending learners right now.
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid gap-4 lg:grid-cols-2">
-                        {learners.map((learner) => (
-                            <Card
-                                key={learner.bookingId}
-                                className="border-slate-200/70 bg-white/95 shadow-sm"
-                            >
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-slate-900">
-                                        {learner.user.userName}
-                                    </CardTitle>
-                                </CardHeader>
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                                <thead className="bg-slate-50">
+                                <tr className="border-b border-slate-200 text-left">
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Learner</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Service</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Duration</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Price</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Requested On</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Training Period</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Status</th>
+                                    <th className="px-4 py-3 font-semibold text-slate-700">Action</th>
+                                </tr>
+                                </thead>
 
-                                <CardContent className="space-y-4 text-sm">
-                                    <div className="flex items-start gap-3">
-                                        <User2 className="mt-0.5 size-4 text-[#3B82F6]" />
-                                        <div>
-                                            <p className="font-medium text-slate-900">Learner</p>
-                                            <p className="text-slate-600">{learner.user.userName}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3">
-                                        <Mail className="mt-0.5 size-4 text-[#3B82F6]" />
-                                        <div>
-                                            <p className="font-medium text-slate-900">Email</p>
-                                            <p className="break-all text-slate-600">
-                                                {learner.user.userEmail}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        <div>
-                                            <p className="font-medium text-slate-900">Service</p>
-                                            <p className="text-slate-600">{learner.serviceType}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="font-medium text-slate-900">Duration</p>
-                                            <p className="text-slate-600">{learner.durationInDays}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="font-medium text-slate-900">Price</p>
-                                            <p className="text-slate-600">NPR {learner.priceNpr}</p>
-                                        </div>
-
-                                        <div>
-                                            <p className="font-medium text-slate-900">Status</p>
-                                            <p className="text-slate-600">{learner.status}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3">
-                                        <CalendarDays className="mt-0.5 size-4 text-[#3B82F6]" />
-                                        <div>
-                                            <p className="font-medium text-slate-900">Training Period</p>
-                                            <p className="text-slate-600">
-                                                {new Date(learner.startDate).toLocaleDateString()} —{" "}
-                                                {new Date(learner.endDate).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <Button
-                                        onClick={() => handleStartTraining(learner.bookingId)}
-                                        disabled={actionId === learner.bookingId}
-                                        className="w-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
+                                <tbody>
+                                {learners.map((learner) => (
+                                    <tr
+                                        key={learner.bookingId}
+                                        className="border-b border-slate-100 align-top hover:bg-slate-50/60"
                                     >
-                                        <Play className="mr-2 size-4" />
-                                        {actionId === learner.bookingId
-                                            ? "Starting..."
-                                            : "Start Training"}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                        <td className="px-4 py-4 font-medium text-slate-900">
+                                            {learner.user.userName}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.user.userEmail}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.serviceType}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.durationInDays} day{learner.durationInDays > 1 ? "s" : ""}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            NPR {learner.priceNpr}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {new Date(learner.createdAt).toLocaleDateString()}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {new Date(learner.startDate).toLocaleDateString()} <br />
+                                            <span className="text-slate-400">to</span> <br />
+                                            {new Date(learner.endDate).toLocaleDateString()}
+                                        </td>
+
+                                        <td className="px-4 py-4 text-slate-600">
+                                            {learner.status}
+                                        </td>
+
+                                        <td className="px-4 py-4">
+                                            <Button
+                                                type="button"
+                                                onClick={() => handleStartTraining(learner.bookingId)}
+                                                disabled={startingBookingId === learner.bookingId}
+                                                className="bg-[#3B82F6] text-white hover:bg-[#2563EB] disabled:bg-slate-200 disabled:text-slate-500"
+                                            >
+                                                {startingBookingId === learner.bookingId
+                                                    ? "Starting..."
+                                                    : "Start Training"}
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 )}
             </div>
