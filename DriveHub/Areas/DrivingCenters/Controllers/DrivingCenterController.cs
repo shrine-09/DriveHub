@@ -280,6 +280,8 @@ public class DrivingCenterController : ControllerBase
 
         await UpdateExpiredBookingsAsync(center.Id);
 
+        var today = DateTime.UtcNow.Date;
+
         var learners = await _context.Bookings
             .Include(b => b.User)
             .Include(b => b.TrainingSessionRecords)
@@ -299,6 +301,17 @@ public class DrivingCenterController : ControllerBase
                 progressPercentage = b.DurationInDays > 0
                     ? (int)Math.Round((double)b.TrainingSessionRecords.Count(r => r.IsPresent) / b.DurationInDays * 100)
                     : 0,
+                todaysAttendance = b.TrainingSessionRecords
+                    .Where(r => r.Date.Date == today)
+                    .Select(r => new
+                    {
+                        r.IsPresent,
+                        r.VehicleControlRating,
+                        r.TrafficAwarenessRating,
+                        r.ConfidenceDisciplineRating,
+                        r.Remarks
+                    })
+                    .FirstOrDefault(),
                 user = new
                 {
                     b.User.UserId,

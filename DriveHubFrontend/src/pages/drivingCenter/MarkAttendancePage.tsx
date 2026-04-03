@@ -27,6 +27,13 @@ type ActiveLearner = {
         userName: string;
         userEmail: string;
     };
+    todaysAttendance: {
+        isPresent: boolean;
+        vehicleControlRating: number | null;
+        trafficAwarenessRating: number | null;
+        confidenceDisciplineRating: number | null;
+        remarks: string | null;
+    } | null;
 };
 
 type AttendanceRowStatus = "present" | "absent";
@@ -131,14 +138,30 @@ export default function MarkAttendancePage() {
     ]);
 
     const handleSelectLearner = (bookingId: number) => {
+        const learner = learners.find((item) => item.bookingId === bookingId);
+
         setSelectedBookingId(bookingId);
-        setIsPresent(null);
-        setVehicleControl(5);
-        setTrafficAwareness(5);
-        setConfidenceDiscipline(5);
-        setRemarks("");
         setStatusMessage("");
         setStatusType("");
+
+        if (learner?.todaysAttendance) {
+            setIsPresent(learner.todaysAttendance.isPresent);
+            setVehicleControl(learner.todaysAttendance.vehicleControlRating ?? 5);
+            setTrafficAwareness(learner.todaysAttendance.trafficAwarenessRating ?? 5);
+            setConfidenceDiscipline(
+                learner.todaysAttendance.confidenceDisciplineRating ?? 5
+            );
+            setRemarks(learner.todaysAttendance.remarks ?? "");
+
+            setStatusMessage("Today's attendance is already recorded. You can update it below.");
+            setStatusType("success");
+        } else {
+            setIsPresent(null);
+            setVehicleControl(5);
+            setTrafficAwareness(5);
+            setConfidenceDiscipline(5);
+            setRemarks("");
+        }
     };
 
     const handleSubmit = async () => {
@@ -165,6 +188,25 @@ export default function MarkAttendancePage() {
                 ...prev,
                 [selectedBookingId]: isPresent ? "present" : "absent",
             }));
+
+            setLearners((prev) =>
+                prev.map((learner) =>
+                    learner.bookingId === selectedBookingId
+                        ? {
+                            ...learner,
+                            todaysAttendance: {
+                                isPresent,
+                                vehicleControlRating: isPresent ? vehicleControl : null,
+                                trafficAwarenessRating: isPresent ? trafficAwareness : null,
+                                confidenceDisciplineRating: isPresent
+                                    ? confidenceDiscipline
+                                    : null,
+                                remarks: remarks || null,
+                            },
+                        }
+                        : learner
+                )
+            );
 
             setStatusMessage(
                 response.message || "Training session recorded successfully."
@@ -264,7 +306,13 @@ export default function MarkAttendancePage() {
 
                                             <tbody>
                                             {paginatedLearners.map((learner) => {
-                                                const rowStatus = attendanceStatusMap[learner.bookingId];
+                                                const rowStatus =
+                                                    attendanceStatusMap[learner.bookingId] ??
+                                                    (learner.todaysAttendance
+                                                        ? learner.todaysAttendance.isPresent
+                                                            ? "present"
+                                                            : "absent"
+                                                        : undefined);
 
                                                 return (
                                                     <tr
