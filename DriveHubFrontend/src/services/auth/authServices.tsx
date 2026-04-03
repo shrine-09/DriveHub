@@ -1,4 +1,3 @@
-import axios from "axios";
 import apiClient from "@/services/apiClient";
 
 const API_BASE_USER = "https://localhost:7234/api/users/User";
@@ -73,18 +72,14 @@ export const changePassword = async (
     return response.data;
 };
 
-export const refreshAccessToken = async (refreshToken: string) => {
-    const response = await axios.post(`${API_BASE_USER}/refresh-token`, {
-        refreshToken,
-    });
+export const refreshAccessToken = async () => {
+    const response = await apiClient.post(`${API_BASE_USER}/refresh-token`);
 
     return response.data;
 };
 
-export const logoutUser = async (refreshToken: string) => {
-    const response = await axios.post(`${API_BASE_USER}/logout`, {
-        refreshToken,
-    });
+export const logoutUser = async () => {
+    const response = await apiClient.post(`${API_BASE_USER}/logout`);
 
     return response.data;
 };

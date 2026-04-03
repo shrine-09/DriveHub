@@ -51,7 +51,6 @@ export default function LoginPage() {
             const response = await loginUser(data.userEmail, data.userPassword);
             const {
                 token,
-                refreshToken,
                 role,
                 name,
                 email,
@@ -60,7 +59,6 @@ export default function LoginPage() {
             } = response;
 
             localStorage.setItem("token", token);
-            localStorage.setItem("refreshToken", refreshToken);
             localStorage.setItem("role", role);
             localStorage.setItem("name", name);
             localStorage.setItem("email", email);

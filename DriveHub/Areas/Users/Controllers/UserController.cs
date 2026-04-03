@@ -86,6 +86,34 @@ public class UserController : ControllerBase
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
         return Convert.ToHexString(bytes);
     }
+    
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddDays(7),
+            Path = "/"
+        };
+
+        Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+    }
+
+    private void ClearRefreshTokenCookie()
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddDays(-1),
+            Path = "/"
+        };
+
+        Response.Cookies.Append("refreshToken", "", cookieOptions);
+    }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
@@ -137,6 +165,8 @@ public class UserController : ControllerBase
         _db.RefreshTokens.Add(refreshToken);
         await _db.SaveChangesAsync();
 
+        SetRefreshTokenCookie(rawRefreshToken);
+
         var isProfileComplete = true;
 
         if (user.UserRole == "DrivingCenter")
@@ -150,12 +180,11 @@ public class UserController : ControllerBase
         return Ok(new
         {
             token = accessToken,
-            refreshToken = rawRefreshToken,
             name = user.UserName,
             email = user.UserEmail,
             role = user.UserRole,
             mustChangePassword = user.MustChangePassword,
-            isProfileComplete
+            isProfileComplete = isProfileComplete
         });
     }
 
@@ -266,9 +295,14 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
+    public async Task<IActionResult> RefreshToken()
     {
-        var tokenHash = HashTokenValue(dto.RefreshToken);
+        var rawRefreshToken = Request.Cookies["refreshToken"];
+
+        if (string.IsNullOrWhiteSpace(rawRefreshToken))
+            return Unauthorized(new { message = "Refresh token cookie is missing." });
+
+        var tokenHash = HashTokenValue(rawRefreshToken);
 
         var existingToken = await _db.RefreshTokens
             .Include(rt => rt.User)
@@ -299,10 +333,11 @@ public class UserController : ControllerBase
         _db.RefreshTokens.Add(newRefreshToken);
         await _db.SaveChangesAsync();
 
+        SetRefreshTokenCookie(newRawRefreshToken);
+
         return Ok(new
         {
             token = newAccessToken,
-            refreshToken = newRawRefreshToken,
             name = existingToken.User.UserName,
             email = existingToken.User.UserEmail,
             role = existingToken.User.UserRole,
@@ -311,20 +346,27 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequestDto dto)
+    public async Task<IActionResult> Logout()
     {
-        var tokenHash = HashTokenValue(dto.RefreshToken);
+        var rawRefreshToken = Request.Cookies["refreshToken"];
 
-        var existingToken = await _db.RefreshTokens
-            .FirstOrDefaultAsync(rt =>
-                rt.TokenHash == tokenHash &&
-                rt.RevokedAt == null);
-
-        if (existingToken != null)
+        if (!string.IsNullOrWhiteSpace(rawRefreshToken))
         {
-            existingToken.RevokedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
+            var tokenHash = HashTokenValue(rawRefreshToken);
+
+            var existingToken = await _db.RefreshTokens
+                .FirstOrDefaultAsync(rt =>
+                    rt.TokenHash == tokenHash &&
+                    rt.RevokedAt == null);
+
+            if (existingToken != null)
+            {
+                existingToken.RevokedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+            }
         }
+
+        ClearRefreshTokenCookie();
 
         return Ok(new { message = "Logged out successfully." });
     }
