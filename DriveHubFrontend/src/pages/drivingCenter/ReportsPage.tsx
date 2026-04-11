@@ -13,6 +13,13 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     LineChart,
     Line,
     XAxis,
@@ -82,6 +89,8 @@ export default function ReportsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+
     useEffect(() => {
         const loadLearners = async () => {
             try {
@@ -129,6 +138,7 @@ export default function ReportsPage() {
         setStatusMessage("");
         setStatusType("");
         setIsLoadingHistory(true);
+        setIsReportDialogOpen(true);
 
         try {
             const data = await getLearnerSessionHistory(bookingId);
@@ -193,8 +203,6 @@ export default function ReportsPage() {
             ),
         };
     }, [history]);
-    
-    
 
     return (
         <DrivingCenterLayout>
@@ -232,44 +240,6 @@ export default function ReportsPage() {
                         </CardDescription>
                     </CardHeader>
 
-                    {filteredLearners.length > itemsPerPage && (
-                        <div className="flex items-center justify-between pt-4">
-                            <p className="text-sm text-slate-500">
-                                Showing {(currentPage - 1) * itemsPerPage + 1}–
-                                {Math.min(currentPage * itemsPerPage, filteredLearners.length)} of{" "}
-                                {filteredLearners.length} learners
-                            </p>
-
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                    className="bg-white text-slate-900 hover:bg-slate-50"
-                                >
-                                    Previous
-                                </Button>
-
-                                <span className="text-sm text-slate-600">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                                    }
-                                    disabled={currentPage === totalPages}
-                                    className="bg-white text-slate-900 hover:bg-slate-50"
-                                >
-                                    Next
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                    
                     <CardContent className="space-y-4">
                         <Input
                             value={searchTerm}
@@ -283,314 +253,370 @@ export default function ReportsPage() {
                         ) : filteredLearners.length === 0 ? (
                             <p className="text-sm text-slate-500">No learners found.</p>
                         ) : (
-                            <div className="overflow-hidden rounded-2xl border border-slate-200">
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full text-sm">
-                                        <thead className="bg-slate-50">
-                                        <tr className="border-b border-slate-200 text-left">
-                                            <th className="px-4 py-3 font-semibold text-slate-700">Learner</th>
-                                            <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
-                                            <th className="px-4 py-3 font-semibold text-slate-700">Service</th>
-                                            <th className="px-4 py-3 font-semibold text-slate-700">Duration</th>
-                                            <th className="px-4 py-3 font-semibold text-slate-700">Progress</th>
-                                            <th className="px-4 py-3 font-semibold text-slate-700">Action</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {paginatedLearners.map((learner) => (
-                                            <tr
-                                                key={learner.bookingId}
-                                                className={`border-b border-slate-100 hover:bg-slate-50/70 ${
-                                                    selectedBookingId === learner.bookingId
-                                                        ? "bg-blue-50/60"
-                                                        : ""
-                                                }`}
-                                            >
-                                                <td className="px-4 py-4 font-medium text-slate-900">
-                                                    {learner.user.userName}
-                                                </td>
-                                                <td className="px-4 py-4 text-slate-600">
-                                                    {learner.user.userEmail}
-                                                </td>
-                                                <td className="px-4 py-4 text-slate-600">
-                                                    {learner.serviceType}
-                                                </td>
-                                                <td className="px-4 py-4 text-slate-600">
-                                                    {learner.durationInDays} day
-                                                    {learner.durationInDays > 1 ? "s" : ""}
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <div className="space-y-2">
-                                                        <p className="text-slate-600">
-                                                            {learner.progressPercentage}%
-                                                        </p>
-                                                        <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
-                                                            <div
-                                                                className="h-full rounded-full bg-[#3B82F6]"
-                                                                style={{
-                                                                    width: `${Math.min(
-                                                                        learner.progressPercentage,
-                                                                        100
-                                                                    )}%`,
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-4">
-                                                    <Button
-                                                        type="button"
-                                                        onClick={() => handleSelectLearner(learner.bookingId)}
-                                                        className="bg-[#3B82F6] text-white hover:bg-[#2563EB]"
-                                                    >
-                                                        View Report
-                                                    </Button>
-                                                </td>
+                            <>
+                                <div className="overflow-hidden rounded-2xl border border-slate-200">
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm">
+                                            <thead className="bg-slate-50">
+                                            <tr className="border-b border-slate-200 text-left">
+                                                <th className="px-4 py-3 font-semibold text-slate-700">Learner</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-700">Service</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-700">Duration</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-700">Progress</th>
+                                                <th className="px-4 py-3 font-semibold text-slate-700">Action</th>
                                             </tr>
-                                        ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                            {paginatedLearners.map((learner) => (
+                                                <tr
+                                                    key={learner.bookingId}
+                                                    className="border-b border-slate-100 hover:bg-slate-50/70"
+                                                >
+                                                    <td className="px-4 py-4 font-medium text-slate-900">
+                                                        {learner.user.userName}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-slate-600">
+                                                        {learner.user.userEmail}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-slate-600">
+                                                        {learner.serviceType}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-slate-600">
+                                                        {learner.durationInDays} day
+                                                        {learner.durationInDays > 1 ? "s" : ""}
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="space-y-2">
+                                                            <p className="text-slate-600">
+                                                                {learner.progressPercentage}%
+                                                            </p>
+                                                            <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
+                                                                <div
+                                                                    className="h-full rounded-full bg-[#3B82F6]"
+                                                                    style={{
+                                                                        width: `${Math.min(
+                                                                            learner.progressPercentage,
+                                                                            100
+                                                                        )}%`,
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => handleSelectLearner(learner.bookingId)}
+                                                            className="bg-[#3B82F6] text-white hover:bg-[#2563EB]"
+                                                        >
+                                                            View Report
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                            </div>
+
+                                {filteredLearners.length > itemsPerPage && (
+                                    <div className="flex items-center justify-between pt-4">
+                                        <p className="text-sm text-slate-500">
+                                            Showing {(currentPage - 1) * itemsPerPage + 1}–
+                                            {Math.min(currentPage * itemsPerPage, filteredLearners.length)} of{" "}
+                                            {filteredLearners.length} learners
+                                        </p>
+
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                                disabled={currentPage === 1}
+                                                className="bg-white text-slate-900 hover:bg-slate-50"
+                                            >
+                                                Previous
+                                            </Button>
+
+                                            <span className="text-sm text-slate-600">
+                                                Page {currentPage} of {totalPages}
+                                            </span>
+
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                                                }
+                                                disabled={currentPage === totalPages}
+                                                className="bg-white text-slate-900 hover:bg-slate-50"
+                                            >
+                                                Next
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </CardContent>
                 </Card>
 
-                {selectedLearner && (
-                    <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-slate-500">
-                                    <User2 className="size-4" />
-                                    <span className="text-sm">Selected Learner Report</span>
-                                </div>
-                                <h2 className="text-2xl font-bold text-slate-900">
-                                    {selectedLearner.user.userName}
-                                </h2>
-                                <p className="text-sm text-slate-600">
-                                    {selectedLearner.user.userEmail}
-                                </p>
-                            </div>
+                <Dialog
+                    open={isReportDialogOpen && !!selectedLearner}
+                    onOpenChange={(open) => {
+                        setIsReportDialogOpen(open);
+                        if (!open) {
+                            setSelectedBookingId(null);
+                            setHistory(null);
+                        }
+                    }}
+                >
+                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-6xl">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {selectedLearner
+                                    ? `Report - ${selectedLearner.user.userName}`
+                                    : "Learner Report"}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Attendance summary, performance trend, and session history.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                                        Service
-                                    </p>
-                                    <p className="mt-1 font-semibold text-slate-900">
-                                        {selectedLearner.serviceType}
-                                    </p>
-                                </div>
-
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                                        Package
-                                    </p>
-                                    <p className="mt-1 font-semibold text-slate-900">
-                                        {selectedLearner.durationInDays} day
-                                        {selectedLearner.durationInDays > 1 ? "s" : ""}
-                                    </p>
-                                </div>
-
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                                        Progress
-                                    </p>
-                                    <p className="mt-1 font-semibold text-slate-900">
-                                        {selectedLearner.progressPercentage}%
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {isLoadingHistory && (
-                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                        <CardContent className="py-10 text-center text-sm text-slate-500">
-                            Loading learner report...
-                        </CardContent>
-                    </Card>
-                )}
-
-                {history && reportSummary && (
-                    <>
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                        {isLoadingHistory ? (
                             <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                                <CardContent className="p-4">
-                                    <p className="text-sm text-slate-500">Total Sessions</p>
-                                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                                        {reportSummary.totalSessions}
-                                    </p>
+                                <CardContent className="py-10 text-center text-sm text-slate-500">
+                                    Loading learner report...
                                 </CardContent>
                             </Card>
+                        ) : history && reportSummary && selectedLearner ? (
+                            <div className="space-y-6">
+                                <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 text-slate-500">
+                                                <User2 className="size-4" />
+                                                <span className="text-sm">Selected Learner Report</span>
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-slate-900">
+                                                {selectedLearner.user.userName}
+                                            </h2>
+                                            <p className="text-sm text-slate-600">
+                                                {selectedLearner.user.userEmail}
+                                            </p>
+                                        </div>
 
-                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                                <CardContent className="p-4">
-                                    <p className="text-sm text-slate-500">Present</p>
-                                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                                        {reportSummary.presentCount}
-                                    </p>
-                                </CardContent>
-                            </Card>
+                                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                    Service
+                                                </p>
+                                                <p className="mt-1 font-semibold text-slate-900">
+                                                    {selectedLearner.serviceType}
+                                                </p>
+                                            </div>
 
-                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                                <CardContent className="p-4">
-                                    <p className="text-sm text-slate-500">Absent</p>
-                                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                                        {reportSummary.absentCount}
-                                    </p>
-                                </CardContent>
-                            </Card>
+                                            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                    Package
+                                                </p>
+                                                <p className="mt-1 font-semibold text-slate-900">
+                                                    {selectedLearner.durationInDays} day
+                                                    {selectedLearner.durationInDays > 1 ? "s" : ""}
+                                                </p>
+                                            </div>
 
-                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                                <CardContent className="p-4">
-                                    <p className="text-sm text-slate-500">Avg Vehicle Control</p>
-                                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                                        {reportSummary.averageVehicleControl}
-                                    </p>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                                <CardContent className="p-4">
-                                    <p className="text-sm text-slate-500">
-                                        Avg Traffic Awareness
-                                    </p>
-                                    <p className="mt-1 text-2xl font-bold text-slate-900">
-                                        {reportSummary.averageTrafficAwareness}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                            <CardHeader>
-                                <div className="flex items-center gap-2">
-                                    <BarChart3 className="size-5 text-[#3B82F6]" />
-                                    <div>
-                                        <CardTitle className="text-slate-900">
-                                            Performance Rating Trend
-                                        </CardTitle>
-                                        <CardDescription className="text-slate-600">
-                                            Session-by-session rating movement over time.
-                                        </CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                {chartData.length === 0 ? (
-                                    <p className="text-sm text-slate-500">
-                                        No present-session rating data available yet.
-                                    </p>
-                                ) : (
-                                    <div className="h-[380px] w-full rounded-2xl border border-slate-200 bg-slate-50/40 p-4">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <LineChart data={chartData}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="date" />
-                                                <YAxis domain={[0, 10]} />
-                                                <Tooltip />
-                                                <Legend />
-                                                <Line
-                                                    type="monotone"
-                                                    dataKey="vehicleControl"
-                                                    name="Vehicle Control"
-                                                    stroke="#2563EB"
-                                                    strokeWidth={3}
-                                                    dot={{ r: 4 }}
-                                                />
-                                                <Line
-                                                    type="monotone"
-                                                    dataKey="trafficAwareness"
-                                                    name="Traffic Awareness"
-                                                    stroke="#16A34A"
-                                                    strokeWidth={3}
-                                                    dot={{ r: 4 }}
-                                                />
-                                                <Line
-                                                    type="monotone"
-                                                    dataKey="confidenceDiscipline"
-                                                    name="Confidence & Discipline"
-                                                    stroke="#DC2626"
-                                                    strokeWidth={3}
-                                                    dot={{ r: 4 }}
-                                                />
-                                            </LineChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                            <CardHeader>
-                                <div className="flex items-center gap-2">
-                                    <CalendarDays className="size-5 text-[#3B82F6]" />
-                                    <div>
-                                        <CardTitle className="text-slate-900">
-                                            Session History
-                                        </CardTitle>
-                                        <CardDescription className="text-slate-600">
-                                            Detailed attendance and rating records for this learner.
-                                        </CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                {history.records.length === 0 ? (
-                                    <p className="text-sm text-slate-500">
-                                        No session history available yet.
-                                    </p>
-                                ) : (
-                                    <div className="overflow-hidden rounded-2xl border border-slate-200">
-                                        <div className="overflow-x-auto">
-                                            <table className="min-w-full text-sm">
-                                                <thead className="bg-slate-50">
-                                                <tr className="border-b border-slate-200 text-left">
-                                                    <th className="px-4 py-3 font-semibold text-slate-700">Date</th>
-                                                    <th className="px-4 py-3 font-semibold text-slate-700">Attendance</th>
-                                                    <th className="px-4 py-3 font-semibold text-slate-700">Vehicle Control</th>
-                                                    <th className="px-4 py-3 font-semibold text-slate-700">Traffic Awareness</th>
-                                                    <th className="px-4 py-3 font-semibold text-slate-700">Confidence & Discipline</th>
-                                                    <th className="px-4 py-3 font-semibold text-slate-700">Remarks</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                {history.records.map((record) => (
-                                                    <tr
-                                                        key={record.trainingSessionRecordId}
-                                                        className="border-b border-slate-100 hover:bg-slate-50/60"
-                                                    >
-                                                        <td className="px-4 py-4 text-slate-600">
-                                                            {new Date(record.date).toLocaleDateString()}
-                                                        </td>
-                                                        <td className="px-4 py-4 text-slate-600">
-                                                            {record.isPresent ? "Present" : "Absent"}
-                                                        </td>
-                                                        <td className="px-4 py-4 text-slate-600">
-                                                            {record.vehicleControlRating ?? "-"}
-                                                        </td>
-                                                        <td className="px-4 py-4 text-slate-600">
-                                                            {record.trafficAwarenessRating ?? "-"}
-                                                        </td>
-                                                        <td className="px-4 py-4 text-slate-600">
-                                                            {record.confidenceDisciplineRating ?? "-"}
-                                                        </td>
-                                                        <td className="px-4 py-4 text-slate-600">
-                                                            {record.remarks || "-"}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                </tbody>
-                                            </table>
+                                            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                    Progress
+                                                </p>
+                                                <p className="mt-1 font-semibold text-slate-900">
+                                                    {selectedLearner.progressPercentage}%
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-slate-500">Total Sessions</p>
+                                            <p className="mt-1 text-2xl font-bold text-slate-900">
+                                                {reportSummary.totalSessions}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-slate-500">Present</p>
+                                            <p className="mt-1 text-2xl font-bold text-slate-900">
+                                                {reportSummary.presentCount}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-slate-500">Absent</p>
+                                            <p className="mt-1 text-2xl font-bold text-slate-900">
+                                                {reportSummary.absentCount}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-slate-500">Avg Vehicle Control</p>
+                                            <p className="mt-1 text-2xl font-bold text-slate-900">
+                                                {reportSummary.averageVehicleControl}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-slate-500">
+                                                Avg Traffic Awareness
+                                            </p>
+                                            <p className="mt-1 text-2xl font-bold text-slate-900">
+                                                {reportSummary.averageTrafficAwareness}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                    <CardHeader>
+                                        <div className="flex items-center gap-2">
+                                            <BarChart3 className="size-5 text-[#3B82F6]" />
+                                            <div>
+                                                <CardTitle className="text-slate-900">
+                                                    Performance Rating Trend
+                                                </CardTitle>
+                                                <CardDescription className="text-slate-600">
+                                                    Session-by-session rating movement over time.
+                                                </CardDescription>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {chartData.length === 0 ? (
+                                            <p className="text-sm text-slate-500">
+                                                No present-session rating data available yet.
+                                            </p>
+                                        ) : (
+                                            <div className="h-[380px] w-full rounded-2xl border border-slate-200 bg-slate-50/40 p-4">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <LineChart data={chartData}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis dataKey="date" />
+                                                        <YAxis domain={[0, 10]} />
+                                                        <Tooltip />
+                                                        <Legend />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="vehicleControl"
+                                                            name="Vehicle Control"
+                                                            stroke="#2563EB"
+                                                            strokeWidth={3}
+                                                            dot={{ r: 4 }}
+                                                        />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="trafficAwareness"
+                                                            name="Traffic Awareness"
+                                                            stroke="#16A34A"
+                                                            strokeWidth={3}
+                                                            dot={{ r: 4 }}
+                                                        />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="confidenceDiscipline"
+                                                            name="Confidence & Discipline"
+                                                            stroke="#DC2626"
+                                                            strokeWidth={3}
+                                                            dot={{ r: 4 }}
+                                                        />
+                                                    </LineChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                    <CardHeader>
+                                        <div className="flex items-center gap-2">
+                                            <CalendarDays className="size-5 text-[#3B82F6]" />
+                                            <div>
+                                                <CardTitle className="text-slate-900">
+                                                    Session History
+                                                </CardTitle>
+                                                <CardDescription className="text-slate-600">
+                                                    Detailed attendance and rating records for this learner.
+                                                </CardDescription>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {history.records.length === 0 ? (
+                                            <p className="text-sm text-slate-500">
+                                                No session history available yet.
+                                            </p>
+                                        ) : (
+                                            <div className="overflow-hidden rounded-2xl border border-slate-200">
+                                                <div className="overflow-x-auto">
+                                                    <table className="min-w-full text-sm">
+                                                        <thead className="bg-slate-50">
+                                                        <tr className="border-b border-slate-200 text-left">
+                                                            <th className="px-4 py-3 font-semibold text-slate-700">Date</th>
+                                                            <th className="px-4 py-3 font-semibold text-slate-700">Attendance</th>
+                                                            <th className="px-4 py-3 font-semibold text-slate-700">Vehicle Control</th>
+                                                            <th className="px-4 py-3 font-semibold text-slate-700">Traffic Awareness</th>
+                                                            <th className="px-4 py-3 font-semibold text-slate-700">Confidence & Discipline</th>
+                                                            <th className="px-4 py-3 font-semibold text-slate-700">Remarks</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        {history.records.map((record) => (
+                                                            <tr
+                                                                key={record.trainingSessionRecordId}
+                                                                className="border-b border-slate-100 hover:bg-slate-50/60"
+                                                            >
+                                                                <td className="px-4 py-4 text-slate-600">
+                                                                    {new Date(record.date).toLocaleDateString()}
+                                                                </td>
+                                                                <td className="px-4 py-4 text-slate-600">
+                                                                    {record.isPresent ? "Present" : "Absent"}
+                                                                </td>
+                                                                <td className="px-4 py-4 text-slate-600">
+                                                                    {record.vehicleControlRating ?? "-"}
+                                                                </td>
+                                                                <td className="px-4 py-4 text-slate-600">
+                                                                    {record.trafficAwarenessRating ?? "-"}
+                                                                </td>
+                                                                <td className="px-4 py-4 text-slate-600">
+                                                                    {record.confidenceDisciplineRating ?? "-"}
+                                                                </td>
+                                                                <td className="px-4 py-4 text-slate-600">
+                                                                    {record.remarks || "-"}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ) : null}
+                    </DialogContent>
+                </Dialog>
             </div>
         </DrivingCenterLayout>
     );
