@@ -10,6 +10,13 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     getActiveLearners,
     recordTrainingSession,
 } from "@/services/auth/authServices";
@@ -60,6 +67,8 @@ export default function MarkAttendancePage() {
     const [attendanceStatusMap, setAttendanceStatusMap] = useState<
         Record<number, AttendanceRowStatus>
     >({});
+
+    const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
 
     useEffect(() => {
         const loadLearners = async () => {
@@ -136,6 +145,15 @@ export default function MarkAttendancePage() {
         trafficAwareness,
         confidenceDiscipline,
     ]);
+
+    const resetAttendanceForm = () => {
+        setSelectedBookingId(null);
+        setIsPresent(null);
+        setVehicleControl(5);
+        setTrafficAwareness(5);
+        setConfidenceDiscipline(5);
+        setRemarks("");
+    };
 
     const handleSelectLearner = (bookingId: number) => {
         const learner = learners.find((item) => item.bookingId === bookingId);
@@ -214,12 +232,8 @@ export default function MarkAttendancePage() {
             setStatusType("success");
 
             setTimeout(() => {
-                setSelectedBookingId(null);
-                setIsPresent(null);
-                setVehicleControl(5);
-                setTrafficAwareness(5);
-                setConfidenceDiscipline(5);
-                setRemarks("");
+                setIsAttendanceDialogOpen(false);
+                resetAttendanceForm();
             }, 700);
         } catch (error: any) {
             if (error.response?.data?.message) {
@@ -318,13 +332,11 @@ export default function MarkAttendancePage() {
                                                     <tr
                                                         key={learner.bookingId}
                                                         className={`border-b border-slate-100 transition ${
-                                                            selectedBookingId === learner.bookingId
-                                                                ? "bg-blue-50/70"
-                                                                : rowStatus === "present"
-                                                                    ? "bg-green-50/80"
-                                                                    : rowStatus === "absent"
-                                                                        ? "bg-red-50/80"
-                                                                        : "hover:bg-slate-50/60"
+                                                            rowStatus === "present"
+                                                                ? "bg-green-50/80"
+                                                                : rowStatus === "absent"
+                                                                    ? "bg-red-50/80"
+                                                                    : "hover:bg-slate-50/60"
                                                         }`}
                                                     >
                                                         <td className="px-4 py-4 font-medium text-slate-900">
@@ -351,23 +363,26 @@ export default function MarkAttendancePage() {
                                                         <td className="px-4 py-4">
                                                             {rowStatus === "present" ? (
                                                                 <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                                  Marked Present
-                                </span>
+                                                                        Marked Present
+                                                                    </span>
                                                             ) : rowStatus === "absent" ? (
                                                                 <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                                  Marked Absent
-                                </span>
+                                                                        Marked Absent
+                                                                    </span>
                                                             ) : (
                                                                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                                  Not Marked
-                                </span>
+                                                                        Not Marked
+                                                                    </span>
                                                             )}
                                                         </td>
 
                                                         <td className="px-4 py-4">
                                                             <Button
                                                                 type="button"
-                                                                onClick={() => handleSelectLearner(learner.bookingId)}
+                                                                onClick={() => {
+                                                                    handleSelectLearner(learner.bookingId);
+                                                                    setIsAttendanceDialogOpen(true);
+                                                                }}
                                                                 className="bg-[#3B82F6] text-white hover:bg-[#2563EB]"
                                                             >
                                                                 {rowStatus ? "Update Attendance" : "Mark Attendance"}
@@ -401,8 +416,8 @@ export default function MarkAttendancePage() {
                                             </Button>
 
                                             <span className="text-sm text-slate-600">
-                        Page {currentPage} of {totalPages}
-                      </span>
+                                                Page {currentPage} of {totalPages}
+                                            </span>
 
                                             <Button
                                                 type="button"
@@ -423,236 +438,253 @@ export default function MarkAttendancePage() {
                     </CardContent>
                 </Card>
 
-                {selectedLearner && (
-                    <>
-                        <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium text-slate-500">Selected Learner</p>
-                                    <h2 className="text-2xl font-bold text-slate-900">
-                                        {selectedLearner.user.userName}
-                                    </h2>
-                                    <p className="text-sm text-slate-600">
-                                        {selectedLearner.user.userEmail}
-                                    </p>
+                <Dialog
+                    open={isAttendanceDialogOpen && !!selectedLearner}
+                    onOpenChange={(open) => {
+                        setIsAttendanceDialogOpen(open);
+                        if (!open) {
+                            resetAttendanceForm();
+                        }
+                    }}
+                >
+                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {selectedLearner
+                                    ? `Attendance - ${selectedLearner.user.userName}`
+                                    : "Attendance"}
+                            </DialogTitle>
+                            <DialogDescription>
+                                Mark attendance and update today’s learner performance.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {selectedLearner && (
+                            <div className="space-y-6">
+                                <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-medium text-slate-500">Selected Learner</p>
+                                            <h2 className="text-2xl font-bold text-slate-900">
+                                                {selectedLearner.user.userName}
+                                            </h2>
+                                            <p className="text-sm text-slate-600">
+                                                {selectedLearner.user.userEmail}
+                                            </p>
+                                        </div>
+
+                                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                    Service
+                                                </p>
+                                                <p className="mt-1 font-semibold text-slate-900">
+                                                    {selectedLearner.serviceType}
+                                                </p>
+                                            </div>
+
+                                            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                    Duration
+                                                </p>
+                                                <p className="mt-1 font-semibold text-slate-900">
+                                                    {selectedLearner.durationInDays} day
+                                                    {selectedLearner.durationInDays > 1 ? "s" : ""}
+                                                </p>
+                                            </div>
+
+                                            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                                <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                    Price
+                                                </p>
+                                                <p className="mt-1 font-semibold text-slate-900">
+                                                    NPR {selectedLearner.priceNpr}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                                        <p className="text-xs uppercase tracking-wide text-slate-500">
-                                            Service
+                                <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-900">Training Schedule</CardTitle>
+                                        <CardDescription className="text-slate-600">
+                                            Current training period for {selectedLearner.user.userName}.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2 text-sm">
+                                        <p className="text-slate-700">
+                                            <span className="font-medium text-slate-900">Training starts:</span>{" "}
+                                            {new Date(selectedLearner.startDate).toLocaleDateString()}
                                         </p>
-                                        <p className="mt-1 font-semibold text-slate-900">
-                                            {selectedLearner.serviceType}
+                                        <p className="text-slate-700">
+                                            <span className="font-medium text-slate-900">Training ends:</span>{" "}
+                                            {new Date(selectedLearner.endDate).toLocaleDateString()}
                                         </p>
-                                    </div>
 
-                                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                                        <p className="text-xs uppercase tracking-wide text-slate-500">
-                                            Duration
-                                        </p>
-                                        <p className="mt-1 font-semibold text-slate-900">
-                                            {selectedLearner.durationInDays} day
-                                            {selectedLearner.durationInDays > 1 ? "s" : ""}
-                                        </p>
-                                    </div>
+                                        {!hasTrainingStarted && (
+                                            <div className="rounded-md border border-amber-300/50 bg-amber-50 px-4 py-3 text-amber-800">
+                                                Training has not started yet. Attendance can only be recorded from{" "}
+                                                {new Date(selectedLearner.startDate).toLocaleDateString()}.
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
 
-                                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                                        <p className="text-xs uppercase tracking-wide text-slate-500">
-                                            Price
-                                        </p>
-                                        <p className="mt-1 font-semibold text-slate-900">
-                                            NPR {selectedLearner.priceNpr}
-                                        </p>
-                                    </div>
+                                <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-900">Attendance</CardTitle>
+                                        <CardDescription className="text-slate-600">
+                                            Mark whether {selectedLearner.user.userName} attended today’s session.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex gap-3">
+                                        <Button
+                                            type="button"
+                                            variant={isPresent === true ? "default" : "outline"}
+                                            className={
+                                                isPresent === true
+                                                    ? "bg-[#3B82F6] text-white hover:bg-[#2563EB]"
+                                                    : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
+                                            }
+                                            onClick={() => setIsPresent(true)}
+                                            disabled={!hasTrainingStarted || isSubmitting}
+                                        >
+                                            Present
+                                        </Button>
+
+                                        <Button
+                                            type="button"
+                                            variant={isPresent === false ? "default" : "outline"}
+                                            className={
+                                                isPresent === false
+                                                    ? "bg-red-600 text-white hover:bg-red-700"
+                                                    : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
+                                            }
+                                            onClick={() => setIsPresent(false)}
+                                            disabled={!hasTrainingStarted || isSubmitting}
+                                        >
+                                            Absent
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+
+                                {isPresent === true && hasTrainingStarted && (
+                                    <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                        <CardHeader>
+                                            <CardTitle className="text-slate-900">Daily Skill Ratings</CardTitle>
+                                            <CardDescription className="text-slate-600">
+                                                Rate today’s performance from 1 to 10.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-6">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-sm font-medium text-slate-700">
+                                                        Vehicle Control
+                                                    </label>
+                                                    <span className="text-sm font-semibold text-[#2563EB]">
+                                                        {vehicleControl}/10
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={1}
+                                                    max={10}
+                                                    value={vehicleControl}
+                                                    onChange={(e) => setVehicleControl(Number(e.target.value))}
+                                                    className="w-full"
+                                                    disabled={isSubmitting}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-sm font-medium text-slate-700">
+                                                        Traffic Awareness
+                                                    </label>
+                                                    <span className="text-sm font-semibold text-[#2563EB]">
+                                                        {trafficAwareness}/10
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={1}
+                                                    max={10}
+                                                    value={trafficAwareness}
+                                                    onChange={(e) => setTrafficAwareness(Number(e.target.value))}
+                                                    className="w-full"
+                                                    disabled={isSubmitting}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-sm font-medium text-slate-700">
+                                                        Confidence & Discipline
+                                                    </label>
+                                                    <span className="text-sm font-semibold text-[#2563EB]">
+                                                        {confidenceDiscipline}/10
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={1}
+                                                    max={10}
+                                                    value={confidenceDiscipline}
+                                                    onChange={(e) => setConfidenceDiscipline(Number(e.target.value))}
+                                                    className="w-full"
+                                                    disabled={isSubmitting}
+                                                />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                <Card className="border-slate-200/70 bg-white/95 shadow-sm">
+                                    <CardHeader>
+                                        <CardTitle className="text-slate-900">Remarks</CardTitle>
+                                        <CardDescription className="text-slate-600">
+                                            Optional notes for today’s session.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <textarea
+                                            value={remarks}
+                                            onChange={(e) => setRemarks(e.target.value)}
+                                            placeholder="Add remarks for today's session..."
+                                            className="min-h-28 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                                            disabled={!hasTrainingStarted || isSubmitting}
+                                        />
+                                    </CardContent>
+                                </Card>
+
+                                <div className="flex justify-end gap-3">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setIsAttendanceDialogOpen(false);
+                                            resetAttendanceForm();
+                                        }}
+                                        disabled={isSubmitting}
+                                        className="border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+                                    >
+                                        Cancel
+                                    </Button>
+
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={!canSubmit || isSubmitting}
+                                        className="bg-[#3B82F6] text-white hover:bg-[#2563EB] disabled:bg-slate-200 disabled:text-slate-500"
+                                    >
+                                        {isSubmitting ? "Saving..." : "Save Changes"}
+                                    </Button>
                                 </div>
                             </div>
-                        </div>
-
-                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-slate-900">Training Schedule</CardTitle>
-                                <CardDescription className="text-slate-600">
-                                    Current training period for {selectedLearner.user.userName}.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-2 text-sm">
-                                <p className="text-slate-700">
-                                    <span className="font-medium text-slate-900">Training starts:</span>{" "}
-                                    {new Date(selectedLearner.startDate).toLocaleDateString()}
-                                </p>
-                                <p className="text-slate-700">
-                                    <span className="font-medium text-slate-900">Training ends:</span>{" "}
-                                    {new Date(selectedLearner.endDate).toLocaleDateString()}
-                                </p>
-
-                                {!hasTrainingStarted && (
-                                    <div className="rounded-md border border-amber-300/50 bg-amber-50 px-4 py-3 text-amber-800">
-                                        Training has not started yet. Attendance can only be recorded from{" "}
-                                        {new Date(selectedLearner.startDate).toLocaleDateString()}.
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-slate-900">Attendance</CardTitle>
-                                <CardDescription className="text-slate-600">
-                                    Mark whether {selectedLearner.user.userName} attended today’s session.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex gap-3">
-                                <Button
-                                    type="button"
-                                    variant={isPresent === true ? "default" : "outline"}
-                                    className={
-                                        isPresent === true
-                                            ? "bg-[#3B82F6] text-white hover:bg-[#2563EB]"
-                                            : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
-                                    }
-                                    onClick={() => setIsPresent(true)}
-                                    disabled={!hasTrainingStarted || isSubmitting}
-                                >
-                                    Present
-                                </Button>
-
-                                <Button
-                                    type="button"
-                                    variant={isPresent === false ? "default" : "outline"}
-                                    className={
-                                        isPresent === false
-                                            ? "bg-red-600 text-white hover:bg-red-700"
-                                            : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50 hover:text-slate-900"
-                                    }
-                                    onClick={() => setIsPresent(false)}
-                                    disabled={!hasTrainingStarted || isSubmitting}
-                                >
-                                    Absent
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {isPresent === true && hasTrainingStarted && (
-                            <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                                <CardHeader>
-                                    <CardTitle className="text-slate-900">Daily Skill Ratings</CardTitle>
-                                    <CardDescription className="text-slate-600">
-                                        Rate today’s performance from 1 to 10.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-slate-700">
-                                                Vehicle Control
-                                            </label>
-                                            <span className="text-sm font-semibold text-[#2563EB]">
-                                                {vehicleControl}/10
-                                            </span>
-                                        </div>
-                                        <input
-                                            type="range"
-                                            min={1}
-                                            max={10}
-                                            value={vehicleControl}
-                                            onChange={(e) => setVehicleControl(Number(e.target.value))}
-                                            className="w-full"
-                                            disabled={isSubmitting}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-slate-700">
-                                                Traffic Awareness
-                                            </label>
-                                            <span className="text-sm font-semibold text-[#2563EB]">
-                                                {trafficAwareness}/10
-                                            </span>
-                                        </div>
-                                        <input
-                                            type="range"
-                                            min={1}
-                                            max={10}
-                                            value={trafficAwareness}
-                                            onChange={(e) => setTrafficAwareness(Number(e.target.value))}
-                                            className="w-full"
-                                            disabled={isSubmitting}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-slate-700">
-                                                Confidence & Discipline
-                                            </label>
-                                            <span className="text-sm font-semibold text-[#2563EB]">
-                                                {confidenceDiscipline}/10
-                                            </span>
-                                        </div>
-                                        <input
-                                            type="range"
-                                            min={1}
-                                            max={10}
-                                            value={confidenceDiscipline}
-                                            onChange={(e) => setConfidenceDiscipline(Number(e.target.value))}
-                                            className="w-full"
-                                            disabled={isSubmitting}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
                         )}
-
-                        <Card className="border-slate-200/70 bg-white/95 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-slate-900">Remarks</CardTitle>
-                                <CardDescription className="text-slate-600">
-                                    Optional notes for today’s session.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                <textarea
-                    value={remarks}
-                    onChange={(e) => setRemarks(e.target.value)}
-                    placeholder="Add remarks for today's session..."
-                    className="min-h-28 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#3B82F6]"
-                    disabled={!hasTrainingStarted || isSubmitting}
-                />
-                            </CardContent>
-                        </Card>
-
-                        <div className="flex justify-end gap-3">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    setSelectedBookingId(null);
-                                    setIsPresent(null);
-                                    setVehicleControl(5);
-                                    setTrafficAwareness(5);
-                                    setConfidenceDiscipline(5);
-                                    setRemarks("");
-                                    setStatusMessage("");
-                                    setStatusType("");
-                                }}
-                                disabled={isSubmitting}
-                                className="border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
-                            >
-                                Cancel
-                            </Button>
-
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={!canSubmit || isSubmitting}
-                                className="bg-[#3B82F6] text-white hover:bg-[#2563EB] disabled:bg-slate-200 disabled:text-slate-500"
-                            >
-                                {isSubmitting ? "Saving..." : "Save Changes"}
-                            </Button>
-                        </div>
-                    </>
-                )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </DrivingCenterLayout>
     );
