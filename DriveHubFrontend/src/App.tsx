@@ -26,6 +26,7 @@ import DrivingCenterDetailsPage from "@/pages/user/DrivingCenterDetailsPage.tsx"
 import MarkAttendancePage from "@/pages/drivingCenter/MarkAttendancePage.tsx";
 import DrivingCenterProfilePage from "@/pages/drivingCenter/DrivingCenterProfilePage.tsx";
 import ReportsPage from "@/pages/drivingCenter/ReportsPage.tsx";
+import VerifyOtpPage from "@/pages/VerifyOtpPage";
 
 function App() {
     return (
@@ -35,6 +36,7 @@ function App() {
                 <Route path={"/login"} element={<LoginPage />} />
                 <Route path={"/register"} element={<RegisterPage />} />
                 <Route path={"/centersRegister"} element={<CentersRegisterPage />} />
+                <Route path="/verify-otp" element={<VerifyOtpPage />} />
                 <Route
                     path={"/admin/dashboard"}
                     element={

@@ -247,3 +247,20 @@ export const extendLearner = async (bookingId: number, extraDays: number) => {
 
     return response.data;
 };
+
+export const verifyOtp = async (email: string, otpCode: string) => {
+    const response = await apiClient.post(`${API_BASE_USER}/verify-otp`, {
+        userEmail: email,
+        otpCode,
+    });
+
+    return response.data;
+};
+
+export const resendOtp = async (email: string) => {
+    const response = await apiClient.post(`${API_BASE_USER}/resend-otp`, {
+        userEmail: email,
+    });
+
+    return response.data;
+};

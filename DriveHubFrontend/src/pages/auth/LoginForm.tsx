@@ -58,13 +58,20 @@ export default function LoginPage() {
                 isProfileComplete,
             } = response;
 
+            if (response.requiresOtpVerification) {
+                navigate("/verify-otp", {
+                    state: { email: response.email },
+                });
+                return;
+            }
+            
             localStorage.setItem("token", token);
             localStorage.setItem("role", role);
             localStorage.setItem("name", name);
             localStorage.setItem("email", email);
             localStorage.setItem("mustChangePassword", String(mustChangePassword));
             localStorage.setItem("isProfileComplete", String(isProfileComplete));
-
+            
             if (mustChangePassword) {
                 navigate("/change-password");
                 return;

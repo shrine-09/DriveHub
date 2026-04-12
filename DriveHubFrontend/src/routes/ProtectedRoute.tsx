@@ -1,6 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
 
-
 type Role = "Admin" | "DrivingCenter" | "User";
 
 type ProtectedRouteProps = {

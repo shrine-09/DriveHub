@@ -86,7 +86,7 @@ public class UserController : ControllerBase
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
         return Convert.ToHexString(bytes);
     }
-    
+
     private void SetRefreshTokenCookie(string refreshToken)
     {
         var cookieOptions = new CookieOptions
@@ -115,6 +115,33 @@ public class UserController : ControllerBase
         Response.Cookies.Append("refreshToken", "", cookieOptions);
     }
 
+    private static string GenerateSixDigitOtp()
+    {
+        return RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+    }
+
+    private static string HashOtp(string otpCode)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(otpCode));
+        return Convert.ToHexString(bytes);
+    }
+
+    private async Task SendOtpEmailAsync(User user, string otpCode)
+    {
+        var emailBody = $@"
+            <h2>DriveHub Email Verification</h2>
+            <p>Your verification code is:</p>
+            <h1 style='letter-spacing: 4px;'>{otpCode}</h1>
+            <p>This code will expire in 10 minutes.</p>
+        ";
+
+        await _emailService.SendEmailAsync(
+            user.UserEmail,
+            "DriveHub Verification Code",
+            emailBody
+        );
+    }
+
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto dto)
     {
@@ -129,7 +156,8 @@ public class UserController : ControllerBase
             UserName = dto.UserName.Trim(),
             UserEmail = email,
             UserPasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.UserPassword),
-            UserRole = "User"
+            UserRole = "User",
+            IsVerified = false
         };
 
         _db.Users.Add(user);
@@ -148,17 +176,49 @@ public class UserController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.UserPassword, user.UserPasswordHash))
             return Unauthorized(new { message = "Invalid credentials." });
 
+        if (user.UserRole == "User" && !user.IsVerified)
+        {
+            var existingOtps = await _db.UserOtpVerifications
+                .Where(o => o.UserId == user.UserId && !o.IsUsed)
+                .ToListAsync();
+
+            if (existingOtps.Count > 0)
+            {
+                _db.UserOtpVerifications.RemoveRange(existingOtps);
+            }
+
+            var otpCode = GenerateSixDigitOtp();
+
+            var otpEntry = new UserOtpVerification
+            {
+                UserId = user.UserId,
+                OtpCodeHash = HashOtp(otpCode),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                IsUsed = false
+            };
+
+            _db.UserOtpVerifications.Add(otpEntry);
+            await _db.SaveChangesAsync();
+
+            await SendOtpEmailAsync(user, otpCode);
+
+            return Ok(new
+            {
+                requiresOtpVerification = true,
+                email = user.UserEmail,
+                message = "A verification code has been sent to your email."
+            });
+        }
+
         var accessToken = GenerateJwtToken(user);
 
         var rawRefreshToken = GenerateSecureRefreshToken();
-        var nowUtc = DateTime.UtcNow;
-
         var refreshToken = new RefreshToken
         {
             UserId = user.UserId,
             TokenHash = HashTokenValue(rawRefreshToken),
-            CreatedAt = nowUtc,
-            ExpiresAt = nowUtc.AddDays(7),
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
             RevokedAt = null
         };
 
@@ -167,7 +227,7 @@ public class UserController : ControllerBase
 
         SetRefreshTokenCookie(rawRefreshToken);
 
-        var isProfileComplete = true;
+        bool isProfileComplete = true;
 
         if (user.UserRole == "DrivingCenter")
         {
@@ -186,6 +246,109 @@ public class UserController : ControllerBase
             mustChangePassword = user.MustChangePassword,
             isProfileComplete = isProfileComplete
         });
+    }
+
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var email = dto.UserEmail.Trim().ToLower();
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.UserEmail.ToLower() == email);
+
+        if (user == null)
+            return NotFound(new { message = "User not found." });
+
+        var otpEntry = await _db.UserOtpVerifications
+            .Where(o =>
+                o.UserId == user.UserId &&
+                !o.IsUsed &&
+                o.ExpiresAt > DateTime.UtcNow)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (otpEntry == null)
+            return BadRequest(new { message = "OTP is invalid or expired." });
+
+        var hashedOtp = HashOtp(dto.OtpCode.Trim());
+
+        if (otpEntry.OtpCodeHash != hashedOtp)
+            return BadRequest(new { message = "Incorrect OTP code." });
+
+        otpEntry.IsUsed = true;
+        user.IsVerified = true;
+
+        var accessToken = GenerateJwtToken(user);
+
+        var rawRefreshToken = GenerateSecureRefreshToken();
+        var refreshToken = new RefreshToken
+        {
+            UserId = user.UserId,
+            TokenHash = HashTokenValue(rawRefreshToken),
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            RevokedAt = null
+        };
+
+        _db.RefreshTokens.Add(refreshToken);
+        await _db.SaveChangesAsync();
+
+        SetRefreshTokenCookie(rawRefreshToken);
+
+        return Ok(new
+        {
+            token = accessToken,
+            name = user.UserName,
+            email = user.UserEmail,
+            role = user.UserRole,
+            mustChangePassword = user.MustChangePassword,
+            isProfileComplete = true
+        });
+    }
+
+    [HttpPost("resend-otp")]
+    public async Task<IActionResult> ResendOtp([FromBody] ResendOtpDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var email = dto.UserEmail.Trim().ToLower();
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.UserEmail.ToLower() == email);
+
+        if (user == null)
+            return NotFound(new { message = "User not found." });
+
+        if (user.IsVerified)
+            return BadRequest(new { message = "User is already verified." });
+
+        var existingOtps = await _db.UserOtpVerifications
+            .Where(o => o.UserId == user.UserId && !o.IsUsed)
+            .ToListAsync();
+
+        if (existingOtps.Count > 0)
+        {
+            _db.UserOtpVerifications.RemoveRange(existingOtps);
+        }
+
+        var otpCode = GenerateSixDigitOtp();
+
+        var otpEntry = new UserOtpVerification
+        {
+            UserId = user.UserId,
+            OtpCodeHash = HashOtp(otpCode),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+            IsUsed = false
+        };
+
+        _db.UserOtpVerifications.Add(otpEntry);
+        await _db.SaveChangesAsync();
+
+        await SendOtpEmailAsync(user, otpCode);
+
+        return Ok(new { message = "A new verification code has been sent." });
     }
 
     [Authorize]
@@ -230,13 +393,12 @@ public class UserController : ControllerBase
         {
             var rawToken = GenerateSecureToken();
             var tokenHash = HashToken(rawToken);
-            var nowUtc = DateTime.UtcNow;
 
             var resetToken = new PasswordResetToken
             {
                 UserId = user.UserId,
                 TokenHash = tokenHash,
-                ExpiresAt = nowUtc.AddMinutes(15),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(15),
                 IsUsed = false
             };
 
@@ -383,18 +545,15 @@ public class UserController : ControllerBase
         if (!int.TryParse(userIdClaim, out var userId))
             return Unauthorized(new { message = "Invalid token." });
 
-        var startDateUtc = DateTime.SpecifyKind(dto.StartDate.Date, DateTimeKind.Utc);
+        var requestedDate = DateTime.SpecifyKind(dto.StartDate.Date, DateTimeKind.Utc);
 
-        if (startDateUtc < DateTime.UtcNow.Date)
+        if (requestedDate < DateTime.UtcNow.Date)
             return BadRequest(new { message = "Start date cannot be in the past." });
 
         var allowedServices = new[] { "Bike", "Car" };
 
         if (!allowedServices.Contains(dto.ServiceType))
             return BadRequest(new { message = "Invalid service type selected." });
-
-        if (dto.DurationInDays <= 0)
-            return BadRequest(new { message = "Invalid package duration selected." });
 
         var drivingCenter = await _db.DrivingCenters
             .Include(dc => dc.Packages)
@@ -409,6 +568,8 @@ public class UserController : ControllerBase
 
         if (selectedPackage == null)
             return BadRequest(new { message = "Selected package is not offered by this driving center." });
+
+        var startDateUtc = DateTime.SpecifyKind(dto.StartDate.Date, DateTimeKind.Utc);
 
         var endDateUtc = startDateUtc.AddDays(dto.DurationInDays);
 
