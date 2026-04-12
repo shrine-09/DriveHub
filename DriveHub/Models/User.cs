@@ -8,6 +8,7 @@ public class User
     public string UserPasswordHash { get; set; } = string.Empty;
     public string UserRole { get; set; } = "User";
     
+    public bool IsVerified { get; set; } = false;
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     public bool MustChangePassword { get; set; } = false;

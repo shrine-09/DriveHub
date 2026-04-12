@@ -19,6 +19,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Booking> Bookings { get; set; }
     public DbSet<TrainingSessionRecord> TrainingSessionRecords { get; set; }
+    
+    public DbSet<UserOtpVerification>  UserOtpVerifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +38,12 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<User>()
             .HasIndex(u => u.UserEmail)
             .IsUnique();
+        
+        modelBuilder.Entity<UserOtpVerification>()
+            .HasOne(o => o.User)
+            .WithMany()
+            .HasForeignKey(o => o.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<DrivingCenter>()
             .HasIndex(dc => dc.CompanyEmail)
