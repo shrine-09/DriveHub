@@ -11,9 +11,10 @@ type Booking = {
     bookingId: number;
     serviceType: string;
     durationInDays: number;
+    completedDays: number;
+    remainingDays: number;
     priceNpr: number;
     startDate: string;
-    endDate: string;
     status: string;
     createdAt: string;
     drivingCenter: {
@@ -116,9 +117,11 @@ export default function UserBookingsPage() {
                                     <tr className="border-b border-slate-200 text-left">
                                         <th className="px-4 py-3 font-semibold text-slate-700">Driving Center</th>
                                         <th className="px-4 py-3 font-semibold text-slate-700">Service</th>
-                                        <th className="px-4 py-3 font-semibold text-slate-700">Duration</th>
+                                        <th className="px-4 py-3 font-semibold text-slate-700">Package Days</th>
                                         <th className="px-4 py-3 font-semibold text-slate-700">Price</th>
-                                        <th className="px-4 py-3 font-semibold text-slate-700">Training Period</th>
+                                        <th className="px-4 py-3 font-semibold text-slate-700">Training Starts</th>
+                                        <th className="px-4 py-3 font-semibold text-slate-700">Completed</th>
+                                        <th className="px-4 py-3 font-semibold text-slate-700">Remaining</th>
                                         <th className="px-4 py-3 font-semibold text-slate-700">Booked On</th>
                                         <th className="px-4 py-3 font-semibold text-slate-700">Contact</th>
                                         <th className="px-4 py-3 font-semibold text-slate-700">Status</th>
@@ -162,9 +165,17 @@ export default function UserBookingsPage() {
                                             </td>
 
                                             <td className="px-4 py-4 text-slate-600">
-                                                {new Date(booking.startDate).toLocaleDateString()} <br />
-                                                <span className="text-slate-400">to</span> <br />
-                                                {new Date(booking.endDate).toLocaleDateString()}
+                                                {new Date(booking.startDate).toLocaleDateString()}
+                                            </td>
+
+                                            <td className="px-4 py-4 text-slate-600">
+                                                {booking.completedDays} day
+                                                {booking.completedDays !== 1 ? "s" : ""}
+                                            </td>
+
+                                            <td className="px-4 py-4 text-slate-600">
+                                                {booking.remainingDays} day
+                                                {booking.remainingDays !== 1 ? "s" : ""}
                                             </td>
 
                                             <td className="px-4 py-4 text-slate-600">
@@ -179,13 +190,13 @@ export default function UserBookingsPage() {
                                             </td>
 
                                             <td className="px-4 py-4">
-                                            <span
-                                                className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(
-                                                    booking.status
-                                                )}`}
-                                            >
-                                              {booking.status}
-                                            </span>
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(
+                                                        booking.status
+                                                    )}`}
+                                                >
+                                                    {booking.status}
+                                                </span>
                                             </td>
                                         </tr>
                                     ))}

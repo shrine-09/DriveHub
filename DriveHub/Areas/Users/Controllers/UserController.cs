@@ -607,6 +607,7 @@ public class UserController : ControllerBase
 
         var bookings = await _db.Bookings
             .Include(b => b.DrivingCenter)
+            .Include(b => b.TrainingSessionRecords)
             .Where(b => b.UserId == userId)
             .OrderByDescending(b => b.CreatedAt)
             .Select(b => new
@@ -614,9 +615,10 @@ public class UserController : ControllerBase
                 b.BookingId,
                 b.ServiceType,
                 b.DurationInDays,
+                completedDays = b.TrainingSessionRecords.Count(r => r.IsPresent),
+                remainingDays = Math.Max(b.DurationInDays - b.TrainingSessionRecords.Count(r => r.IsPresent), 0),
                 b.PriceNpr,
                 b.StartDate,
-                b.EndDate,
                 b.Status,
                 b.CreatedAt,
                 drivingCenter = new

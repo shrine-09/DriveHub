@@ -22,9 +22,6 @@
 
     <ItemGroup>
       <Folder Include="Areas\DrivingCenters\" />
-      <Folder Include="Controllers\" />
-      <Folder Include="DTOs\" />
-      <Folder Include="Helpers\" />
       <Folder Include="Migrations\" />
     </ItemGroup>
 

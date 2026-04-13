@@ -372,7 +372,7 @@ export default function ReportsPage() {
                         }
                     }}
                 >
-                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-6xl">
+                    <DialogContent className="max-h-[92vh] overflow-y-auto p-4 sm:max-w-[95vw] sm:p-6 lg:max-w-6xl xl:max-w-7xl">
                         <DialogHeader>
                             <DialogTitle>
                                 {selectedLearner
@@ -391,7 +391,7 @@ export default function ReportsPage() {
                                 </CardContent>
                             </Card>
                         ) : history && reportSummary && selectedLearner ? (
-                            <div className="space-y-6">
+                            <div className="space-y-5 sm:space-y-6">
                                 <div className="rounded-3xl border border-slate-200 bg-white/95 p-6 shadow-sm">
                                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                         <div className="space-y-2">
@@ -407,7 +407,7 @@ export default function ReportsPage() {
                                             </p>
                                         </div>
 
-                                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                                             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
                                                 <p className="text-xs uppercase tracking-wide text-slate-500">
                                                     Service
@@ -439,7 +439,7 @@ export default function ReportsPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-5">
                                     <Card className="border-slate-200/70 bg-white/95 shadow-sm">
                                         <CardContent className="p-4">
                                             <p className="text-sm text-slate-500">Total Sessions</p>
@@ -508,14 +508,15 @@ export default function ReportsPage() {
                                                 No present-session rating data available yet.
                                             </p>
                                         ) : (
-                                            <div className="h-[380px] w-full rounded-2xl border border-slate-200 bg-slate-50/40 p-4">
+                                            <div className="h-[260px] w-full rounded-2xl border border-slate-200 bg-slate-50/40 p-2 sm:h-[320px] sm:p-3 lg:h-[420px] lg:p-4">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <LineChart data={chartData}>
                                                         <CartesianGrid strokeDasharray="3 3" />
-                                                        <XAxis dataKey="date" />
-                                                        <YAxis domain={[0, 10]} />
-                                                        <Tooltip />
                                                         <Legend />
+                                                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                                        <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} width={30} />
+                                                        <Tooltip />
+                                                        <Legend wrapperStyle={{ fontSize: "12px" }} />
                                                         <Line
                                                             type="monotone"
                                                             dataKey="vehicleControl"
