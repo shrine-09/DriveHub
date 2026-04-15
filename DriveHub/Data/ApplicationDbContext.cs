@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TrainingSessionRecord> TrainingSessionRecords { get; set; }
     
     public DbSet<UserOtpVerification>  UserOtpVerifications { get; set; }
+    public DbSet<UserNotification> UserNotifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,5 +95,17 @@ public class ApplicationDbContext : DbContext
             .WithMany(b => b.TrainingSessionRecords)
             .HasForeignKey(tsr => tsr.BookingId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        modelBuilder.Entity<UserNotification>()
+            .HasOne(n => n.User)
+            .WithMany()
+            .HasForeignKey(n => n.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<UserNotification>()
+            .HasOne(n => n.RelatedBooking)
+            .WithMany()
+            .HasForeignKey(n => n.RelatedBookingId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

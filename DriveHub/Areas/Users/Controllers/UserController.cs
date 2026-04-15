@@ -636,4 +636,52 @@ public class UserController : ControllerBase
 
         return Ok(bookings);
     }
+    
+    [Authorize(Roles = "User")]
+    [HttpGet("my-notifications")]
+    public async Task<IActionResult> GetMyNotifications()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var notifications = await _db.UserNotifications
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.CreatedAt)
+            .Select(n => new
+            {
+                n.Id,
+                n.Title,
+                n.Message,
+                n.Type,
+                n.RelatedBookingId,
+                n.IsRead,
+                n.CreatedAt
+            })
+            .ToListAsync();
+
+        return Ok(notifications);
+    }
+    
+    [Authorize(Roles = "User")]
+    [HttpPut("mark-notification-read/{notificationId}")]
+    public async Task<IActionResult> MarkNotificationAsRead(int notificationId)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid token." });
+
+        var notification = await _db.UserNotifications
+            .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
+
+        if (notification == null)
+            return NotFound(new { message = "Notification not found." });
+
+        notification.IsRead = true;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Notification marked as read." });
+    }
 }

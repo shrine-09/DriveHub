@@ -19,6 +19,35 @@ public class DrivingCenterController : ControllerBase
         _context = context;
     }
 
+    private async Task CreateNotificationIfNotExistsAsync(
+        int userId,
+        string type,
+        string title,
+        string message,
+        int? relatedBookingId = null)
+    {
+        var alreadyExists = await _context.UserNotifications.AnyAsync(n =>
+            n.UserId == userId &&
+            n.Type == type &&
+            n.RelatedBookingId == relatedBookingId);
+
+        if (alreadyExists)
+            return;
+
+        var notification = new UserNotification
+        {
+            UserId = userId,
+            Type = type,
+            Title = title,
+            Message = message,
+            RelatedBookingId = relatedBookingId,
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.UserNotifications.Add(notification);
+    }
+    
     [Authorize(Roles = "DrivingCenter")]
     [HttpGet("my-profile")]
     public async Task<IActionResult> GetMyProfile()
@@ -257,6 +286,14 @@ public class DrivingCenterController : ControllerBase
             return BadRequest(new { message = "Only pending learners can be started." });
 
         booking.Status = "Active";
+
+        await CreateNotificationIfNotExistsAsync(
+            booking.UserId,
+            "TrainingStarted",
+            "Training Started",
+            "Your training has been accepted and started by the driving center. Please contact the center and attend your sessions.",
+            booking.BookingId
+        );
 
         await _context.SaveChangesAsync();
 
@@ -513,6 +550,24 @@ public class DrivingCenterController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        var completedDays = await _context.TrainingSessionRecords
+            .CountAsync(r => r.BookingId == booking.BookingId && r.IsPresent);
+
+        var remainingDays = Math.Max(booking.DurationInDays - completedDays, 0);
+
+        if (remainingDays == 1)
+        {
+            await CreateNotificationIfNotExistsAsync(
+                booking.UserId,
+                "OneDayRemaining",
+                "One Training Day Remaining",
+                "You have only 1 training day remaining in your package. Contact the driving center if you want to extend your training.",
+                booking.BookingId
+            );
+
+            await _context.SaveChangesAsync();
+        }
+        
         return Ok(new { message = "Training session recorded successfully." });
     }
 

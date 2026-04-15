@@ -264,3 +264,19 @@ export const resendOtp = async (email: string) => {
 
     return response.data;
 };
+
+export const getMyNotifications = async () => {
+    const response = await apiClient.get(
+        "https://localhost:7234/api/users/User/my-notifications"
+    );
+
+    return response.data;
+};
+
+export const markNotificationAsRead = async (notificationId: number) => {
+    const response = await apiClient.put(
+        `https://localhost:7234/api/users/User/mark-notification-read/${notificationId}`
+    );
+
+    return response.data;
+};
