@@ -192,15 +192,15 @@ public class AdminController : ControllerBase
         await _context.SaveChangesAsync();
 
         var emailBody = $@"
-    <h2>DriveHub Application Update</h2>
-    <p>We’re sorry to inform you that your driving center application was not approved.</p>
-    <p><strong>Company Name:</strong> {application.CompanyName}</p>
-    <p><strong>Registration Number:</strong> {application.RegistrationNumber}</p>
-    {(string.IsNullOrWhiteSpace(application.AdminRemarks)
-        ? ""
-        : $"<p><strong>Remarks:</strong> {application.AdminRemarks}</p>")}
-    <p>You may review the submitted details and apply again if needed.</p>
-";
+            <h2>DriveHub Application Update</h2>
+            <p>We’re sorry to inform you that your driving center application was not approved.</p>
+            <p><strong>Company Name:</strong> {application.CompanyName}</p>
+            <p><strong>Registration Number:</strong> {application.RegistrationNumber}</p>
+            {(string.IsNullOrWhiteSpace(application.AdminRemarks)
+                ? ""
+                : $"<p><strong>Remarks:</strong> {application.AdminRemarks}</p>")}
+            <p>You may review the submitted details and apply again if needed.</p>
+        ";
 
         await _emailService.SendEmailAsync(
             application.CompanyEmail,

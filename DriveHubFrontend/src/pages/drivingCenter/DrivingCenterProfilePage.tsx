@@ -30,7 +30,7 @@ import {
 type PackageItem = {
     serviceType: string;
     durationInDays: number;
-    priceNpr: string;
+    priceNpr: number;
 };
 
 type DrivingCenterProfile = {
@@ -49,7 +49,7 @@ type DrivingCenterProfile = {
     packages: {
         id: number;
         serviceType: string;
-        durationInDays: number;
+        durationInDays: number | "";
         priceNpr: number;
     }[];
 };
@@ -64,7 +64,7 @@ export default function DrivingCenterProfilePage() {
     const [longitude, setLongitude] = useState("");
     const [description, setDescription] = useState("");
     const [packages, setPackages] = useState<PackageItem[]>([
-        { serviceType: "", durationInDays: "", priceNpr: "" },
+        { serviceType: "", durationInDays: 0, priceNpr: 0 },
     ]);
 
     const [isLoading, setIsLoading] = useState(true);
@@ -92,8 +92,8 @@ export default function DrivingCenterProfilePage() {
                     setPackages(
                         data.packages.map((pkg: any) => ({
                             serviceType: pkg.serviceType,
-                            durationInDays: String(pkg.durationInDays),
-                            priceNpr: String(pkg.priceNpr),
+                            durationInDays: pkg.durationInDays,
+                            priceNpr: pkg.priceNpr,
                         }))
                     );
                 }
@@ -119,7 +119,7 @@ export default function DrivingCenterProfilePage() {
     const updatePackage = (
         index: number,
         field: keyof PackageItem,
-        value: string
+        value: string | number
     ) => {
         setPackages((prev) =>
             prev.map((pkg, i) => (i === index ? { ...pkg, [field]: value } : pkg))
@@ -129,7 +129,7 @@ export default function DrivingCenterProfilePage() {
     const addServiceCard = () => {
         setPackages((prev) => [
             ...prev,
-            { serviceType: "", durationInDays: "", priceNpr: "" },
+            { serviceType: "", durationInDays: 0, priceNpr: 0 },
         ]);
     };
 
@@ -180,8 +180,8 @@ export default function DrivingCenterProfilePage() {
         const completePackages = packages.filter(
             (pkg) =>
                 pkg.serviceType.trim() !== "" &&
-                pkg.durationInDays.trim() !== "" &&
-                pkg.priceNpr.trim() !== ""
+                pkg.durationInDays > 0 &&
+                pkg.priceNpr > 0
         );
 
         if (completePackages.length === 0) {
@@ -193,13 +193,13 @@ export default function DrivingCenterProfilePage() {
         for (const pkg of packages) {
             const isCompletelyEmpty =
                 pkg.serviceType.trim() === "" &&
-                pkg.durationInDays.trim() === "" &&
-                pkg.priceNpr.trim() === "";
+                pkg.durationInDays === 0 &&
+                pkg.priceNpr === 0;
 
             const isComplete =
                 pkg.serviceType.trim() !== "" &&
-                pkg.durationInDays.trim() !== "" &&
-                pkg.priceNpr.trim() !== "";
+                pkg.durationInDays > 0 &&
+                pkg.priceNpr > 0;
 
             if (isCompletelyEmpty || !isComplete) {
                 setStatusMessage(
@@ -209,8 +209,8 @@ export default function DrivingCenterProfilePage() {
                 return false;
             }
 
-            const duration = Number(pkg.durationInDays);
-            const price = Number(pkg.priceNpr);
+            const duration = pkg.durationInDays;
+            const price = pkg.priceNpr;
 
             if (Number.isNaN(duration) || duration <= 0) {
                 setStatusMessage("Please enter a valid package duration in days.");
@@ -239,8 +239,8 @@ export default function DrivingCenterProfilePage() {
         try {
             const formattedPackages = packages.map((pkg) => ({
                 serviceType: pkg.serviceType,
-                durationInDays: Number(pkg.durationInDays),
-                priceNpr: Number(pkg.priceNpr),
+                durationInDays: pkg.durationInDays,
+                priceNpr: pkg.priceNpr,
             }));
 
             const response = await setupDrivingCenterProfile({
@@ -513,9 +513,13 @@ export default function DrivingCenterProfilePage() {
                                                     min="1"
                                                     className="h-12 text-base text-slate-900 placeholder:text-slate-400"
                                                     placeholder="Enter days"
-                                                    value={pkg.durationInDays}
+                                                    value={pkg.durationInDays === 0 ? "" : pkg.durationInDays}
                                                     onChange={(e) =>
-                                                        updatePackage(index, "durationInDays", e.target.value)
+                                                        updatePackage(
+                                                            index,
+                                                            "durationInDays",
+                                                            e.target.value === "" ? 0 : Number(e.target.value)
+                                                        )
                                                     }
                                                 />
                                             </div>
@@ -529,9 +533,13 @@ export default function DrivingCenterProfilePage() {
                                                     min="1"
                                                     className="h-12 text-base text-slate-900 placeholder:text-slate-400"
                                                     placeholder="Enter price"
-                                                    value={pkg.priceNpr}
+                                                    value={pkg.priceNpr === 0 ? "" : pkg.priceNpr}
                                                     onChange={(e) =>
-                                                        updatePackage(index, "priceNpr", e.target.value)
+                                                        updatePackage(
+                                                            index,
+                                                            "priceNpr",
+                                                            e.target.value === "" ? 0 : Number(e.target.value)
+                                                        )
                                                     }
                                                 />
                                             </div>

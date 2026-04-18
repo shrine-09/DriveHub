@@ -16,7 +16,7 @@ import LocationPickerMap from "@/components/drivingCenter/LocationPickerMap";
 type PackageItem = {
     serviceType: string;
     durationInDays: number;
-    priceNpr: string;
+    priceNpr: number;
 };
 
 export default function DrivingCenterSetupProfilePage() {
@@ -30,7 +30,7 @@ export default function DrivingCenterSetupProfilePage() {
     const [description, setDescription] = useState("");
 
     const [packages, setPackages] = useState<PackageItem[]>([
-        { serviceType: "", durationInDays: "", priceNpr: "" },
+        { serviceType: "", durationInDays: 0, priceNpr: 0 },
     ]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,7 +48,7 @@ export default function DrivingCenterSetupProfilePage() {
     const updatePackage = (
         index: number,
         field: keyof PackageItem,
-        value: string
+        value: string | number
     ) => {
         setPackages((prev) =>
             prev.map((pkg, i) => (i === index ? { ...pkg, [field]: value } : pkg))
@@ -58,7 +58,7 @@ export default function DrivingCenterSetupProfilePage() {
     const addServiceCard = () => {
         setPackages((prev) => [
             ...prev,
-            { serviceType: "", durationInDays: "", priceNpr: "" },
+            { serviceType: "", durationInDays: 0, priceNpr: 0 },
         ]);
     };
 
@@ -109,8 +109,8 @@ export default function DrivingCenterSetupProfilePage() {
         const completePackages = packages.filter(
             (pkg) =>
                 pkg.serviceType.trim() !== "" &&
-                pkg.durationInDays.trim() !== "" &&
-                pkg.priceNpr.trim() !== ""
+                pkg.durationInDays > 0 &&
+                pkg.priceNpr > 0
         );
 
         if (completePackages.length === 0) {
@@ -122,24 +122,24 @@ export default function DrivingCenterSetupProfilePage() {
         for (const pkg of packages) {
             const isCompletelyEmpty =
                 pkg.serviceType.trim() === "" &&
-                pkg.durationInDays.trim() === "" &&
-                pkg.priceNpr.trim() === "";
+                pkg.durationInDays === 0 &&
+                pkg.priceNpr === 0;
 
             const isComplete =
                 pkg.serviceType.trim() !== "" &&
-                pkg.durationInDays.trim() !== "" &&
-                pkg.priceNpr.trim() !== "";
+                pkg.durationInDays > 0 &&
+                pkg.priceNpr > 0;
 
             if (isCompletelyEmpty || !isComplete) {
                 setStatusMessage(
-                    "Please complete Services or delete unnecessary service rows."
+                    "Please complete services or delete unnecessary service rows."
                 );
                 setStatusType("error");
                 return false;
             }
 
-            const duration = Number(pkg.durationInDays);
-            const price = Number(pkg.priceNpr);
+            const duration = pkg.durationInDays;
+            const price = pkg.priceNpr;
 
             if (Number.isNaN(duration) || duration <= 0) {
                 setStatusMessage("Please enter a valid package duration in days.");
@@ -168,8 +168,8 @@ export default function DrivingCenterSetupProfilePage() {
         try {
             const formattedPackages = packages.map((pkg) => ({
                 serviceType: pkg.serviceType,
-                durationInDays: Number(pkg.durationInDays),
-                priceNpr: Number(pkg.priceNpr),
+                durationInDays: pkg.durationInDays,
+                priceNpr: pkg.priceNpr,
             }));
 
             await setupDrivingCenterProfile({
@@ -371,9 +371,13 @@ export default function DrivingCenterSetupProfilePage() {
                                             min="1"
                                             className="h-12 text-base text-slate-900 placeholder:text-slate-400"
                                             placeholder="Enter days"
-                                            value={pkg.durationInDays}
+                                            value={pkg.durationInDays === 0 ? "" : pkg.durationInDays}
                                             onChange={(e) =>
-                                                updatePackage(index, "durationInDays", e.target.value)
+                                                updatePackage(
+                                                    index,
+                                                    "durationInDays",
+                                                    e.target.value === "" ? 0 : Number(e.target.value)
+                                                )
                                             }
                                         />
                                     </div>
@@ -387,9 +391,13 @@ export default function DrivingCenterSetupProfilePage() {
                                             min="1"
                                             className="h-12 text-base text-slate-900 placeholder:text-slate-400"
                                             placeholder="Enter price"
-                                            value={pkg.priceNpr}
+                                            value={pkg.priceNpr === 0 ? "" : pkg.priceNpr}
                                             onChange={(e) =>
-                                                updatePackage(index, "priceNpr", e.target.value)
+                                                updatePackage(
+                                                    index,
+                                                    "priceNpr",
+                                                    e.target.value === "" ? 0 : Number(e.target.value)
+                                                )
                                             }
                                         />
                                     </div>
