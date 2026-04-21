@@ -64,7 +64,7 @@ export default function UserDashboard() {
         <UserLayout>
             <div className="space-y-8">
                 <section className="overflow-hidden rounded-3xl border border-blue-200/60 bg-gradient-to-br from-[#1E3A5F] via-[#334155] to-[#3B82F6] p-6 text-white shadow-sm md:p-10">
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-700">
                         <Badge className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-slate-100 hover:bg-white/10">
                             Welcome back
                         </Badge>
@@ -130,7 +130,11 @@ export default function UserDashboard() {
                             </p>
                         </div>
 
-                        <Button variant="ghost" asChild className="text-slate-700 hover:text-[#2563EB]">
+                        <Button
+                            variant="ghost"
+                            asChild
+                            className="text-slate-700 hover:text-[#2563EB]"
+                        >
                             <Link to="/user/search">
                                 View all
                                 <ArrowRight className="ml-2 size-4" />
@@ -155,7 +159,7 @@ export default function UserDashboard() {
                             {centers.map((center) => (
                                 <Card
                                     key={center.id}
-                                    className="border-slate-200/70 bg-white/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                                    className="h-full border-slate-200/70 bg-white/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                                 >
                                     <CardHeader>
                                         <div className="flex items-start justify-between gap-3">
@@ -177,7 +181,7 @@ export default function UserDashboard() {
                                         </div>
                                     </CardHeader>
 
-                                    <CardContent className="space-y-4">
+                                    <CardContent className="flex h-full flex-col space-y-4">
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-slate-600">Type</span>
                                             <Badge
@@ -197,12 +201,14 @@ export default function UserDashboard() {
                                             </p>
                                         </div>
 
-                                        <Button
-                                            asChild
-                                            className="w-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
-                                        >
-                                            <Link to={`/user/centers/${center.id}`}>View Center</Link>
-                                        </Button>
+                                        <div className="mt-auto pt-4">
+                                            <Button
+                                                asChild
+                                                className="w-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
+                                            >
+                                                <Link to={`/user/centers/${center.id}`}>View Center</Link>
+                                            </Button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))}
